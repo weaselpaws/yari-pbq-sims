@@ -8,21 +8,21 @@ added for the desktop port.
 
 QUESTIONS = [
     {
-        "id": "seq1", "engine": "sequencing", "title": "Sequencing — Incident Response Lifecycle",
+        "id": "seq1", "domain": "Security Operations", "engine": "sequencing", "title": "Sequencing — Incident Response Lifecycle",
         "scenario": "A phishing email leads to a compromised workstation. Place the NIST incident response phases in the correct order, from first to last.",
         "items": ["Preparation", "Identification", "Containment", "Eradication", "Recovery", "Lessons Learned"],
         "correct_order": [0, 1, 2, 3, 4, 5],
         "explanation": "NIST SP 800-61 defines the incident response lifecycle as Preparation, Identification, Containment, Eradication, Recovery, and Lessons Learned (post-incident activity). Containment comes before eradication — you stop the bleeding before you remove the cause.",
     },
     {
-        "id": "seq2", "engine": "sequencing", "title": "Sequencing — Vulnerability Management Lifecycle",
+        "id": "seq2", "domain": "Threats, Vulnerabilities, and Mitigations", "engine": "sequencing", "title": "Sequencing — Vulnerability Management Lifecycle",
         "scenario": "Your team is standing up a vulnerability management program. Place the steps in the order they should occur.",
         "items": ["Identify and inventory assets", "Scan for vulnerabilities", "Assess and prioritize risk", "Remediate findings", "Verify and report"],
         "correct_order": [0, 1, 2, 3, 4],
         "explanation": "You can't scan what you don't know you have, so asset inventory comes first. Scanning surfaces findings, prioritization ranks them by risk, remediation fixes them, and verification confirms the fix actually worked before closing the loop with reporting.",
     },
     {
-        "id": "match1", "engine": "matching", "title": "Matching — Social Engineering Channels",
+        "id": "match1", "domain": "Threats, Vulnerabilities, and Mitigations", "engine": "matching", "title": "Matching — Social Engineering Channels",
         "scenario": "Match each social engineering attack to the channel or defining trait it uses.",
         "terms": ["Phishing", "Vishing", "Smishing", "Whaling"],
         "answers": [
@@ -35,7 +35,7 @@ QUESTIONS = [
         "explanation": "The attack names map to their channel: phishing = email, vishing = voice, smishing = SMS. Whaling is a phishing variant defined by its target (senior executives / \"big fish\"), not a different channel.",
     },
     {
-        "id": "match2", "engine": "matching", "title": "Matching — Security Control Types",
+        "id": "match2", "domain": "General Security Concepts", "engine": "matching", "title": "Matching — Security Control Types",
         "scenario": "Match each control type to an example of that control in practice.",
         "terms": ["Preventive", "Detective", "Corrective", "Deterrent"],
         "answers": [
@@ -48,7 +48,7 @@ QUESTIONS = [
         "explanation": "Preventive controls stop an event before it happens (blocking a port). Detective controls identify an event in progress or after the fact (a SIEM alert). Corrective controls fix things after an incident (restoring from backup). Deterrent controls discourage an attempt without directly blocking it (a monitoring banner).",
     },
     {
-        "id": "calc1", "engine": "calculation", "title": "Calculation — Annualized Loss Expectancy",
+        "id": "calc1", "domain": "Security Program Management", "engine": "calculation", "title": "Calculation — Annualized Loss Expectancy",
         "scenario": "A risk assessment finds that a single successful ransomware event would cost the organization $50,000 (SLE). Historical data puts the likelihood at once every 5 years, giving an ARO of 0.2. Calculate the Annualized Loss Expectancy (ALE).",
         "formula_hint": "ALE = SLE × ARO",
         "values": {"SLE": "$50,000", "ARO": "0.2"},
@@ -56,7 +56,7 @@ QUESTIONS = [
         "explanation": "ALE = SLE × ARO = $50,000 × 0.2 = $10,000. This is the figure you'd compare against the annual cost of a control to decide whether it's worth implementing.",
     },
     {
-        "id": "calc2", "engine": "calculation", "title": "Calculation — Annualized Loss Expectancy",
+        "id": "calc2", "domain": "Security Program Management", "engine": "calculation", "title": "Calculation — Annualized Loss Expectancy",
         "scenario": "A separate risk assessment estimates a single data-exposure incident would cost $8,000 (SLE), and the organization expects this type of event to occur about 3 times per year (ARO). Calculate the ALE.",
         "formula_hint": "ALE = SLE × ARO",
         "values": {"SLE": "$8,000", "ARO": "3"},
@@ -64,21 +64,21 @@ QUESTIONS = [
         "explanation": "ALE = SLE × ARO = $8,000 × 3 = $24,000. Note ARO can be greater than 1 when an event is expected to happen more than once a year — it isn't a probability capped at 1.",
     },
     {
-        "id": "class1", "engine": "classification", "title": "Classification — Malware Type",
+        "id": "class1", "domain": "Threats, Vulnerabilities, and Mitigations", "engine": "classification", "title": "Classification — Malware Type",
         "scenario": "An employee's workstation begins encrypting every file it can reach on local and mapped network drives, then displays a message demanding payment in cryptocurrency to restore access. What type of malware is this?",
         "options": ["Worm", "Ransomware", "Rootkit", "Logic bomb"],
         "correct_index": 1,
         "explanation": "Encrypting files and demanding payment for the decryption key is the defining behavior of ransomware. A worm self-propagates across a network without this extortion behavior; a rootkit hides its presence rather than encrypting data; a logic bomb triggers on a specific condition rather than encrypting broadly for ransom.",
     },
     {
-        "id": "class2", "engine": "classification", "title": "Classification — Control Category",
+        "id": "class2", "domain": "General Security Concepts", "engine": "classification", "title": "Classification — Control Category",
         "scenario": "The organization requires all new hires to complete a security awareness training course before their account is activated. What category of control is this?",
         "options": ["Technical", "Administrative", "Physical", "Compensating"],
         "correct_index": 1,
         "explanation": "Administrative controls are policies, procedures, and training — the human/process side of security. Technical controls are implemented through technology (firewalls, encryption); physical controls are tangible barriers (locks, badges); a compensating control is a substitute used when the primary control can't be applied.",
     },
     {
-        "id": "log1", "engine": "log_triage", "title": "Log Triage — Authentication Log",
+        "id": "log1", "domain": "Security Operations", "engine": "log_triage", "title": "Log Triage — Authentication Log",
         "scenario": "Review this authentication log feed. Flag every malicious entry, then classify the attack.",
         "log_lines": [
             {"text": "10:02:01  sshd[1122]: Accepted publickey for jdoe from 10.0.4.12 port 51322", "malicious": False},
@@ -95,7 +95,7 @@ QUESTIONS = [
         "explanation": "Repeated failed logins for privileged accounts (root, admin) from a single external IP in rapid succession is the signature of a brute-force login attempt. The two successful publickey logins and the cron entry are unrelated, normal activity from internal hosts and should not be flagged.",
     },
     {
-        "id": "fw1", "engine": "firewall", "title": "Firewall/ACL Builder — Perimeter Policy",
+        "id": "fw1", "domain": "Security Architecture", "engine": "firewall", "title": "Firewall/ACL Builder — Perimeter Policy",
         "scenario": (
             "Build an ordered rule set that satisfies this policy: allow inbound HTTPS and DNS, "
             "block inbound Telnet, and deny everything else by default. Drag rules from the pool "
@@ -124,7 +124,7 @@ QUESTIONS = [
         ),
     },
     {
-        "id": "term1", "engine": "terminal", "title": "Linux Terminal — Find the Weak Permission",
+        "id": "term1", "domain": "Security Operations", "engine": "terminal", "title": "Linux Terminal — Find the Weak Permission",
         "scenario": (
             "A web server has been compromised. Use the simulated terminal below to inspect file "
             "permissions in the web root and find the misconfiguration."

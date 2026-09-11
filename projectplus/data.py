@@ -6,6 +6,7 @@ QUESTIONS = [
     {
         "engine": "sequence",
         "tag": "SEQUENCING",
+        "domain": "Project Life Cycle",
         "prompt": "Arrange the five process groups in the order they occur across a project's life cycle.",
         "sub": "Tap each item in the correct order. Tap a placed item to undo it.",
         "items": ["Executing", "Closing", "Initiating", "Monitoring & Controlling", "Planning"],
@@ -15,6 +16,7 @@ QUESTIONS = [
     {
         "engine": "sequence",
         "tag": "SEQUENCING",
+        "domain": "Tools and Documentation",
         "prompt": "Put the steps of a standard change control process in order.",
         "sub": "Tap each item in the correct order.",
         "items": [
@@ -34,6 +36,7 @@ QUESTIONS = [
     {
         "engine": "match",
         "tag": "MATCHING",
+        "domain": "Project Management Fundamentals",
         "prompt": "Match each term to its correct definition.",
         "sub": "Tap a term, then tap its matching definition.",
         "left": ["Float", "Critical Path", "Scope Creep", "Baseline"],
@@ -49,6 +52,7 @@ QUESTIONS = [
     {
         "engine": "match",
         "tag": "MATCHING",
+        "domain": "Tools and Documentation",
         "prompt": "Match each project management tool to its primary purpose.",
         "sub": "Tap a tool, then tap its matching purpose.",
         "left": ["Gantt Chart", "RACI Matrix", "Risk Register", "Fishbone Diagram"],
@@ -64,6 +68,7 @@ QUESTIONS = [
     {
         "engine": "calc",
         "tag": "CALCULATION",
+        "domain": "Tools and Documentation",
         "prompt": "Using the earned value data below, calculate the Cost Performance Index (CPI) and Schedule Performance Index (SPI).",
         "sub": "CPI = EV ÷ AC  ·  SPI = EV ÷ PV  ·  Round to 2 decimal places.",
         "table": [
@@ -80,6 +85,7 @@ QUESTIONS = [
     {
         "engine": "calc",
         "tag": "CALCULATION",
+        "domain": "Project Life Cycle",
         "prompt": "A project has two paths from start to finish: Path A takes 22 days, Path B takes 17 days.",
         "sub": "Enter the critical path duration, and the total float available on Path B.",
         "table": [("Path A duration", "22 days"), ("Path B duration", "17 days")],
@@ -92,6 +98,7 @@ QUESTIONS = [
     {
         "engine": "classify",
         "tag": "CLASSIFICATION",
+        "domain": "Project Management Fundamentals",
         "prompt": "Sort each scenario into the knowledge area it best represents.",
         "sub": "Tap a scenario, then tap the bucket it belongs in.",
         "items": [
@@ -105,6 +112,7 @@ QUESTIONS = [
     {
         "engine": "classify",
         "tag": "CLASSIFICATION",
+        "domain": "Project Life Cycle",
         "prompt": "Sort each activity into the process group it belongs to.",
         "sub": "Tap an activity, then tap the bucket it belongs in.",
         "items": [

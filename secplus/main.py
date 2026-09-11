@@ -266,6 +266,46 @@ class MainWindow(QMainWindow):
         next_btn.clicked.connect(go_next)
         self.current_card.layout().addWidget(next_btn, alignment=Qt.AlignLeft)
 
+    def _build_domain_breakdown(self):
+        by_domain = {}
+        for i, q in enumerate(QUESTIONS):
+            d = by_domain.setdefault(q["domain"], {"correct": 0, "total": 0})
+            d["total"] += 1
+            if self.results[i] is True:
+                d["correct"] += 1
+        ranked = sorted(by_domain.items(), key=lambda kv: kv[1]["correct"] / kv[1]["total"], reverse=True)
+
+        wrap = QFrame()
+        wrap.setObjectName("card")
+        layout = QVBoxLayout(wrap)
+        heading = QLabel("DOMAIN BREAKDOWN")
+        heading.setObjectName("engLabel")
+        layout.addWidget(heading)
+
+        if len(ranked) > 1:
+            best_pct = ranked[0][1]["correct"] / ranked[0][1]["total"]
+            worst_pct = ranked[-1][1]["correct"] / ranked[-1][1]["total"]
+            if best_pct > worst_pct:
+                summary = QLabel(f"Strongest: {ranked[0][0]}  ·  Needs review: {ranked[-1][0]}")
+                summary.setObjectName("sub")
+                summary.setWordWrap(True)
+                layout.addWidget(summary)
+
+        for domain, d in ranked:
+            pct = round(d["correct"] / d["total"] * 100)
+            row = QHBoxLayout()
+            name = QLabel(domain)
+            name.setWordWrap(True)
+            row.addWidget(name, 1)
+            score_lbl = QLabel(f"{d['correct']} / {d['total']}  ({pct}%)")
+            score_lbl.setObjectName("verdictPass" if pct >= 80 else ("verdictFail" if pct < 50 else "sub"))
+            row.addWidget(score_lbl)
+            row_wrap = QWidget()
+            row_wrap.setLayout(row)
+            layout.addWidget(row_wrap)
+
+        return wrap
+
     def render_done(self):
         score = self._score()
         pct = round(score / len(QUESTIONS) * 100)
@@ -292,6 +332,8 @@ class MainWindow(QMainWindow):
         msg_label.setObjectName("sub")
         msg_label.setWordWrap(True)
         layout.addWidget(msg_label)
+
+        layout.addWidget(self._build_domain_breakdown())
 
         btn_row = QHBoxLayout()
         again_btn = QPushButton("Run it again")

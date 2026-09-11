@@ -217,7 +217,7 @@ class MainWindow(QMainWindow):
         self.feedback_label.style().unpolish(self.feedback_label)
         self.feedback_label.style().polish(self.feedback_label)
 
-        self.results.append({"tag": q["tag"], "correct": bool(correct) and not skipped})
+        self.results.append({"tag": q["tag"], "domain": q["domain"], "correct": bool(correct) and not skipped})
 
         next_btn = QPushButton("See results" if self.index == len(QUESTIONS) - 1 else "Next question")
         next_btn.setObjectName("btnPrimary")
@@ -229,6 +229,46 @@ class MainWindow(QMainWindow):
 
         next_btn.clicked.connect(go_next)
         self.controls_layout.addWidget(next_btn)
+
+    def _build_domain_breakdown(self):
+        by_domain = {}
+        for r in self.results:
+            d = by_domain.setdefault(r["domain"], {"correct": 0, "total": 0})
+            d["total"] += 1
+            if r["correct"]:
+                d["correct"] += 1
+        ranked = sorted(by_domain.items(), key=lambda kv: kv[1]["correct"] / kv[1]["total"], reverse=True)
+
+        wrap = QFrame()
+        wrap.setObjectName("card")
+        layout = QVBoxLayout(wrap)
+        heading = QLabel("DOMAIN BREAKDOWN")
+        heading.setObjectName("engineTag")
+        layout.addWidget(heading, alignment=Qt.AlignLeft)
+
+        if len(ranked) > 1:
+            best_pct = ranked[0][1]["correct"] / ranked[0][1]["total"]
+            worst_pct = ranked[-1][1]["correct"] / ranked[-1][1]["total"]
+            if best_pct > worst_pct:
+                summary = QLabel(f"Strongest: {ranked[0][0]}  ·  Needs review: {ranked[-1][0]}")
+                summary.setObjectName("sub")
+                summary.setWordWrap(True)
+                layout.addWidget(summary)
+
+        for domain, d in ranked:
+            pct = round(d["correct"] / d["total"] * 100)
+            row = QHBoxLayout()
+            name = QLabel(domain)
+            name.setWordWrap(True)
+            row.addWidget(name, 1)
+            score_lbl = QLabel(f"{d['correct']} / {d['total']}  ({pct}%)")
+            score_lbl.setObjectName("feedbackCorrect" if pct >= 80 else ("feedbackIncorrect" if pct < 50 else "sub"))
+            row.addWidget(score_lbl)
+            row_wrap = QWidget()
+            row_wrap.setLayout(row)
+            layout.addWidget(row_wrap)
+
+        return wrap
 
     def render_results(self):
         total = len(QUESTIONS)
@@ -270,6 +310,8 @@ class MainWindow(QMainWindow):
             row_wrap.setObjectName("breakdownRow")
             row_wrap.setLayout(row)
             layout.addWidget(row_wrap)
+
+        layout.addWidget(self._build_domain_breakdown())
 
         restart_btn = QPushButton("Restart")
         restart_btn.setObjectName("btnGhost")

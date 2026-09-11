@@ -111,6 +111,10 @@ class MainWindow(QMainWindow):
         self.topic_title.setObjectName("topicTitle")
         header_row.addWidget(self.topic_title)
         header_row.addStretch(1)
+        domain_summary_btn = QPushButton("Domain summary")
+        domain_summary_btn.setObjectName("btnAction")
+        domain_summary_btn.clicked.connect(self.show_domain_summary)
+        header_row.addWidget(domain_summary_btn)
         self.overall_label = QLabel()
         self.overall_label.setObjectName("overall")
         header_row.addWidget(self.overall_label)
@@ -184,6 +188,35 @@ class MainWindow(QMainWindow):
         box = QMessageBox(self)
         box.setWindowTitle("Not quite")
         box.setText(text)
+        box.setStandardButtons(QMessageBox.Ok)
+        box.exec()
+
+    def show_domain_summary(self):
+        by_domain = {}
+        for t in TOPICS["core1"] + TOPICS["core2"]:
+            s = self.scores.get(t["id"])
+            if not s or s["total"] == 0:
+                continue
+            d = by_domain.setdefault(t["domain"], {"correct": 0, "total": 0})
+            d["correct"] += s["correct"]
+            d["total"] += s["total"]
+
+        box = QMessageBox(self)
+        box.setWindowTitle("Domain Summary")
+        if not by_domain:
+            box.setText("No questions answered yet — try a few topics first.")
+        else:
+            ranked = sorted(by_domain.items(), key=lambda kv: kv[1]["correct"] / kv[1]["total"], reverse=True)
+            lines = []
+            if len(ranked) > 1:
+                best_pct = ranked[0][1]["correct"] / ranked[0][1]["total"]
+                worst_pct = ranked[-1][1]["correct"] / ranked[-1][1]["total"]
+                if best_pct > worst_pct:
+                    lines.append(f"Strongest: {ranked[0][0]}   ·   Needs review: {ranked[-1][0]}\n")
+            for domain, d in ranked:
+                pct = round(d["correct"] / d["total"] * 100)
+                lines.append(f"{domain}: {d['correct']} / {d['total']}  ({pct}%)")
+            box.setText("\n".join(lines))
         box.setStandardButtons(QMessageBox.Ok)
         box.exec()
 

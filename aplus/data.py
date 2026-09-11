@@ -4,11 +4,11 @@ legacy-html/YARI_A+_PBQ_Simulator.html."""
 TOPICS = {
     "core1": [
         {
-            "id": "subnetting", "title": "Subnetting", "type": "fill",
+            "id": "subnetting", "domain": "Networking", "title": "Subnetting", "type": "fill",
             "desc": "Calculate mask, network, broadcast, host range, and usable hosts from a given IP/CIDR.",
         },
         {
-            "id": "ports", "title": "Ports & protocols", "type": "match",
+            "id": "ports", "domain": "Networking", "title": "Ports & protocols", "type": "match",
             "desc": "Match each protocol to its port number(s).",
             "pairs": [
                 ("FTP", "20 / 21"), ("SSH", "22"), ("Telnet", "23"), ("SMTP", "25"), ("DNS", "53"),
@@ -18,7 +18,7 @@ TOPICS = {
             "explain": "Memory aid: FTP=20/21 · SSH=22 · Telnet=23 · SMTP=25 · DNS=53 · DHCP=67/68 · HTTP=80 · POP3=110 · IMAP=143 · SNMP=161/162 · LDAP=389 · HTTPS=443 · SMB=445 · RDP=3389.",
         },
         {
-            "id": "cables", "title": "Cables & connectors", "type": "match",
+            "id": "cables", "domain": "Hardware", "title": "Cables & connectors", "type": "match",
             "desc": "Match each connector to what it is used for.",
             "pairs": [
                 ("RJ-45", "Ethernet — Cat5e/6/6a, wired LAN"),
@@ -33,7 +33,7 @@ TOPICS = {
             "explain": "VGA is the only fully analog connector in this set — no digital signal, no audio. DVI-D drops the analog pins that DVI-I keeps.",
         },
         {
-            "id": "dora", "title": "DHCP DORA order", "type": "sequence",
+            "id": "dora", "domain": "Networking", "title": "DHCP DORA order", "type": "sequence",
             "desc": "Put the DHCP lease process in the correct order.",
             "steps": [
                 "Discover — client broadcasts for a DHCP server",
@@ -44,7 +44,7 @@ TOPICS = {
             "explain": "DORA: Discover, Offer, Request, Acknowledge. The client broadcasts twice — once to find a server (Discover) and once to accept an offer (Request), which also tells other DHCP servers to withdraw their offers.",
         },
         {
-            "id": "raid", "title": "RAID selection", "type": "scenario",
+            "id": "raid", "domain": "Hardware", "title": "RAID selection", "type": "scenario",
             "desc": "Pick the correct RAID level for each scenario.",
             "questions": [
                 {
@@ -70,7 +70,7 @@ TOPICS = {
             ],
         },
         {
-            "id": "printer", "title": "Laser printer process", "type": "sequence",
+            "id": "printer", "domain": "Hardware", "title": "Laser printer process", "type": "sequence",
             "desc": "Put the 7-step laser printing process in order.",
             "steps": [
                 "Processing — RIP converts the print job to a bitmap",
@@ -86,7 +86,7 @@ TOPICS = {
     ],
     "core2": [
         {
-            "id": "troubleshooting", "title": "Troubleshooting methodology", "type": "sequence",
+            "id": "troubleshooting", "domain": "Operational Procedures", "title": "Troubleshooting methodology", "type": "sequence",
             "desc": "Put the CompTIA 6-step troubleshooting process in order.",
             "steps": [
                 "Identify the problem",
@@ -99,7 +99,7 @@ TOPICS = {
             "explain": "This exact order is exam-critical. Note step 5 verifies with the USER, not just yourself — and documentation is always last, after the fix is confirmed working.",
         },
         {
-            "id": "malware", "title": "Malware identification", "type": "match",
+            "id": "malware", "domain": "Security", "title": "Malware identification", "type": "match",
             "desc": "Match each malware type to how it behaves.",
             "pairs": [
                 ("Virus", "Attaches to a file — needs a host file and user action to spread"),
@@ -114,7 +114,7 @@ TOPICS = {
             "explain": "The key exam distinction: a virus needs a host file and user action; a worm spreads on its own over the network with no user interaction required.",
         },
         {
-            "id": "wireless", "title": "Wireless security — worst to best", "type": "sequence",
+            "id": "wireless", "domain": "Security", "title": "Wireless security — worst to best", "type": "sequence",
             "desc": "Order these Wi-Fi security protocols from weakest to strongest.",
             "steps": [
                 "WEP — RC4, broken, crackable in minutes",
@@ -125,7 +125,7 @@ TOPICS = {
             "explain": "WEP was deprecated in 2004 and is trivially crackable. WPA was a stopgap using TKIP, which is also vulnerable. WPA2 introduced AES-CCMP as the real standard. WPA3 replaces the PSK handshake with SAE, closing offline dictionary attacks.",
         },
         {
-            "id": "commands", "title": "Windows command line", "type": "match",
+            "id": "commands", "domain": "Operating Systems", "title": "Windows command line", "type": "match",
             "desc": "Match each command to what it does.",
             "pairs": [
                 ("ipconfig /all", "Shows full IP configuration detail"),
