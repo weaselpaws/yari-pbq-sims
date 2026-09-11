@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARI Network+ PBQ Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rack:#1B1D1F;
+    --panel:#2A2D30;
+    --panel-2:#333739;
+    --slot:#141618;
+    --line:#3E4245;
+    --text:#E8E9EA;
+    --text-dim:#8D9296;
+    --blue:#3E7CB1;
+    --blue-dim:#2E5C85;
+    --orange:#D97D3D;
+    --green:#5FA65F;
+    --green-dim:#3F7A3F;
+    --red:#C1524A;
+    --red-dim:#8F3A34;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --disp:'Oswald', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px),
+      var(--rack);
+    color:var(--text);
+    font-family:var(--mono);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 14px 60px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{width:100%;max-width:640px;}
+
+  /* header: rack unit label strip */
+  .rack-strip{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    padding:6px 4px;
+    margin-bottom:6px;
+  }
+  .rack-strip .led{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);}
+
+  header{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:18px 20px;
+    margin-bottom:18px;
+    position:relative;
+  }
+  header::before{
+    content:"";
+    position:absolute;
+    left:0;right:0;top:0;
+    height:3px;
+    background:repeating-linear-gradient(90deg, var(--blue) 0 14px, var(--orange) 14px 28px);
+    border-radius:6px 6px 0 0;
+    opacity:.55;
+  }
+  .unit-id{font-size:11px;color:var(--text-dim);letter-spacing:.05em;}
+  header h1{
+    font-family:var(--disp);
+    font-weight:600;
+    font-size:26px;
+    letter-spacing:.01em;
+    margin:4px 0 4px;
+    color:var(--text);
+  }
+  header .sub{font-size:12px;color:var(--text-dim);}
+  .score-line{
+    margin-top:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-top:1px solid var(--line);
+    padding-top:10px;
+    font-size:12px;
+  }
+  .score-line b{color:var(--text);font-size:14px;}
+  .reset-btn{
+    background:none;
+    border:1px solid var(--text-dim);
+    color:var(--text-dim);
+    font-family:var(--mono);
+    font-size:11px;
+    padding:5px 10px;
+    border-radius:4px;
+    cursor:pointer;
+  }
+  .reset-btn:hover{border-color:var(--red);color:var(--red);}
+
+  /* port rail: patch panel numbered ports as progress */
+  .port-rail{
+    display:flex;
+    gap:5px;
+    margin-bottom:18px;
+    background:var(--slot);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px 8px;
+    flex-wrap:wrap;
+  }
+  .port{
+    flex:1;
+    min-width:28px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    font-size:9px;
+    color:var(--text-dim);
+  }
+  .port .jack{
+    width:100%;
+    height:14px;
+    border-radius:2px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+  }
+  .port.done .jack{background:var(--green-dim);border-color:var(--green);}
+  .port.wrong .jack{background:var(--red-dim);border-color:var(--red);}
+  .port.current .jack{background:var(--blue-dim);border-color:var(--blue);}
+
+  /* question card */
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px 20px;
+    position:relative;
+  }
+  .eng-label{
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--orange);
+    margin-bottom:8px;
+  }
+  .q-title{
+    font-family:var(--disp);
+    font-weight:600;
+    font-size:18px;
+    line-height:1.4;
+    color:var(--text);
+    margin:0 0 4px;
+  }
+  .q-scenario{
+    font-size:13px;
+    line-height:1.6;
+    color:var(--text-dim);
+    background:var(--slot);
+    border-left:3px solid var(--blue);
+    padding:10px 12px;
+    border-radius:0 4px 4px 0;
+    margin:10px 0 16px;
+  }
+  .stage{margin-top:14px;}
+  .stage.locked{pointer-events:none;}
+
+  .opt{
+    width:100%;
+    text-align:left;
+    background:var(--slot);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:13.5px;
+    padding:11px 14px;
+    border-radius:5px;
+    cursor:pointer;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:border-color .12s, background .12s;
+  }
+  .opt:hover{border-color:var(--blue);}
+  .opt.selected{border-color:var(--blue);background:#213041;}
+  .opt.correct{border-color:var(--green);background:#1E2B1E;color:#B7D9B7;}
+  .opt.incorrect{border-color:var(--red);background:#2B1E1D;color:#E3B5B1;}
+  .opt .idx{
+    font-size:11px;
+    width:18px;height:18px;
+    border-radius:50%;
+    border:1px solid var(--text-dim);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .opt.selected .idx{border-color:var(--blue);color:var(--blue);}
+  .opt.correct .idx{border-color:var(--green);color:var(--green);}
+  .opt.incorrect .idx{border-color:var(--red);color:var(--red);}
+
+  /* sequencing */
+  .seq-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .seq-chip{
+    background:var(--slot);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12.5px;
+    padding:8px 12px;
+    border-radius:5px;
+    cursor:pointer;
+  }
+  .seq-chip:disabled{opacity:.3;cursor:default;}
+  .seq-chip:hover:not(:disabled){border-color:var(--blue);}
+  .seq-slots{display:flex;flex-direction:column;gap:6px;}
+  .seq-slot{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--slot);
+    border:1px dashed var(--line);
+    border-radius:5px;
+    padding:9px 12px;
+    min-height:20px;
+    font-size:13px;
+  }
+  .seq-slot.filled{border-style:solid;}
+  .seq-slot .num{
+    font-size:11px;color:var(--orange);width:20px;flex-shrink:0;font-weight:600;
+  }
+  .seq-slot.correct{border-color:var(--green);background:#1E2B1E;}
+  .seq-slot.incorrect{border-color:var(--red);background:#2B1E1D;}
+  .seq-clear{
+    background:none;border:none;color:var(--text-dim);font-family:var(--mono);
+    font-size:11px;cursor:pointer;text-decoration:underline;margin-top:6px;
+  }
+
+  /* matching */
+  .match-grid{display:flex;flex-direction:column;gap:14px;}
+  .match-row{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;}
+  .match-term{
+    flex:1 1 130px;
+    background:var(--slot);
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:10px 12px;
+    font-size:13px;
+    display:flex;align-items:center;
+  }
+  .match-answers{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+  .match-term.active-target{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);}
+  .match-term .paired-tag{
+    margin-left:auto;font-size:11px;color:var(--blue);
+    border:1px solid var(--blue);border-radius:3px;padding:2px 6px;
+  }
+
+  /* calc */
+  .calc-inputs{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+  .calc-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;background:var(--slot);border:1px solid var(--line);border-radius:5px;padding:8px 12px;}
+  .calc-answer-row{display:flex;align-items:center;gap:10px;}
+  .calc-answer-row label{font-size:13px;color:var(--text-dim);}
+  .calc-answer-row input{
+    font-family:var(--mono);
+    font-size:15px;
+    background:var(--rack);
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:9px 10px;
+    width:130px;
+    color:var(--text);
+  }
+  .calc-answer-row input:focus{outline:none;border-color:var(--blue);}
+
+  .submit-btn{
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    font-family:var(--disp);
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:.03em;
+    padding:11px 22px;
+    border-radius:5px;
+    cursor:pointer;
+    margin-top:14px;
+  }
+  .submit-btn:disabled{opacity:.35;cursor:default;}
+  .submit-btn:hover:not(:disabled){background:var(--blue-dim);}
+
+  .next-btn{
+    background:var(--orange);
+    color:#211205;
+    border:none;
+    font-family:var(--disp);
+    font-weight:600;
+    font-size:14px;
+    padding:11px 22px;
+    border-radius:5px;
+    cursor:pointer;
+    margin-top:16px;
+  }
+  .next-btn:hover{background:#c86b2c;}
+
+  .verdict{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:var(--disp);
+    font-weight:600;
+    font-size:16px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    padding:7px 14px;
+    border-radius:4px;
+    margin-top:16px;
+  }
+  .verdict::before{content:"";width:8px;height:8px;border-radius:50%;}
+  .verdict.pass{color:#B7D9B7;background:#1E2B1E;border:1px solid var(--green);}
+  .verdict.pass::before{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .verdict.fail{color:#E3B5B1;background:#2B1E1D;border:1px solid var(--red);}
+  .verdict.fail::before{background:var(--red);box-shadow:0 0 6px var(--red);}
+
+  .explain{
+    margin-top:12px;
+    font-size:12.5px;
+    line-height:1.6;
+    color:var(--text-dim);
+    background:var(--slot);
+    border-left:3px solid var(--text-dim);
+    padding:10px 12px;
+    border-radius:0 4px 4px 0;
+  }
+  .explain b{color:var(--text);}
+
+  footer{
+    margin-top:28px;
+    text-align:center;
+    font-size:11px;
+    color:var(--text-dim);
+    letter-spacing:.03em;
+  }
+
+  .done-screen{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:36px 24px;
+    text-align:center;
+  }
+  .done-screen h2{font-family:var(--disp);font-weight:600;font-size:24px;margin:0 0 8px;}
+  .done-screen .stat-big{font-family:var(--disp);font-weight:700;font-size:44px;color:var(--orange);margin:14px 0 6px;}
+  .done-screen p{font-size:13px;color:var(--text-dim);line-height:1.6;}
+
+  @media (max-width:420px){
+    header h1{font-size:22px;}
+    .card{padding:18px 16px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
+  }
+
+  .opt:focus-visible,.seq-chip:focus-visible,.submit-btn:focus-visible,.next-btn:focus-visible,.reset-btn:focus-visible{
+    outline:2px solid var(--blue);
+    outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="rack-strip"><span class="led"></span>RU 08 — COMPTIA N10-009 — LIVE</div>
+  <header>
+    <div class="unit-id">PATCH PANEL — 8 PORTS</div>
+    <h1>YARI Network+ PBQ Simulator</h1>
+    <div class="sub">8 performance-based questions · 4 question types · review before you submit for exam</div>
+    <div class="score-line">
+      <div>Score: <b id="scoreText">0 / 8</b></div>
+      <button class="reset-btn" id="resetBtn">Reset progress</button>
+    </div>
+  </header>
+
+  <div class="port-rail" id="portRail"></div>
+
+  <div id="stageHost"></div>
+
+  <footer>YARI — Yellowhammer Applied Research Institute · Study Materials · yellowhammer.institute</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "yari_netplus_pbq_v1";
+
+  var QUESTIONS = [
+    {
+      id: "seq1",
+      engine: "sequencing",
+      title: "Sequencing — OSI Model",
+      scenario: "Place the OSI model layers in order, starting from Layer 1 (Physical) and working up to Layer 7 (Application).",
+      items: [
+        "Physical",
+        "Data Link",
+        "Network",
+        "Transport",
+        "Session",
+        "Presentation",
+        "Application"
+      ],
+      correctOrder: [0,1,2,3,4,5,6],
+      explanation: "Bottom to top: Physical, Data Link, Network, Transport, Session, Presentation, Application. A common mnemonic is \"Please Do Not Throw Sausage Pizza Away.\" Knowing which layer a device or problem lives at is one of the most heavily tested Network+ skills."
+    },
+    {
+      id: "seq2",
+      engine: "sequencing",
+      title: "Sequencing — DHCP Lease Process",
+      scenario: "A workstation boots up and needs an IP address from the DHCP server. Place the steps of the DHCP process (DORA) in order.",
+      items: [
+        "Discover — client broadcasts for a DHCP server",
+        "Offer — server offers an available IP address",
+        "Request — client requests the offered address",
+        "Acknowledge — server confirms the lease"
+      ],
+      correctOrder: [0,1,2,3],
+      explanation: "DORA: Discover, Offer, Request, Acknowledge. The client broadcasts first since it has no IP yet, the server offers a lease, the client explicitly requests it (so multiple DHCP servers know only one offer was accepted), and the server acknowledges to finalize the lease."
+    },
+    {
+      id: "match1",
+      engine: "matching",
+      title: "Matching — Well-Known Ports",
+      scenario: "Match each protocol to its well-known port number.",
+      terms: ["FTP", "SSH", "DNS", "HTTPS"],
+      answers: [
+        "Port 21",
+        "Port 22",
+        "Port 53",
+        "Port 443"
+      ],
+      correctPairs: [0,1,2,3],
+      explanation: "FTP uses port 21 for control (20 for data), SSH uses port 22, DNS uses port 53, and HTTPS uses port 443. These well-known ports show up constantly on the exam, both directly and buried inside troubleshooting scenarios."
+    },
+    {
+      id: "match2",
+      engine: "matching",
+      title: "Matching — Devices to OSI Layer",
+      scenario: "Match each network device to the OSI layer it primarily operates at.",
+      terms: ["Hub", "Switch", "Router", "NIC"],
+      answers: [
+        "Layer 1 — Physical",
+        "Layer 2 — Data Link",
+        "Layer 3 — Network",
+        "Layer 1/2 — Physical and Data Link"
+      ],
+      correctPairs: [0,1,2,3],
+      explanation: "A hub just repeats electrical signals with no addressing awareness (Layer 1). A switch forwards frames using MAC addresses (Layer 2). A router forwards packets using IP addresses (Layer 3). A NIC straddles both — it has a physical connection and a burned-in MAC address."
+    },
+    {
+      id: "calc1",
+      engine: "calculation",
+      title: "Calculation — Usable Hosts per Subnet",
+      scenario: "A subnet is assigned a /28 CIDR mask. Calculate the number of usable host addresses in that subnet.",
+      formulaHint: "Usable hosts = 2^(host bits) − 2",
+      values: { CIDR: "/28", "Host bits": "32 − 28 = 4" },
+      correctAnswer: 14,
+      unit: "",
+      explanation: "A /28 leaves 4 host bits (32 − 28 = 4). 2^4 = 16 total addresses, minus 2 for the network and broadcast addresses = 14 usable hosts."
+    },
+    {
+      id: "calc2",
+      engine: "calculation",
+      title: "Calculation — Usable Hosts per Subnet",
+      scenario: "A subnet is assigned a /26 CIDR mask. Calculate the number of usable host addresses in that subnet.",
+      formulaHint: "Usable hosts = 2^(host bits) − 2",
+      values: { CIDR: "/26", "Host bits": "32 − 26 = 6" },
+      correctAnswer: 62,
+      unit: "",
+      explanation: "A /26 leaves 6 host bits (32 − 26 = 6). 2^6 = 64 total addresses, minus 2 for the network and broadcast addresses = 62 usable hosts."
+    },
+    {
+      id: "class1",
+      engine: "classification",
+      title: "Classification — OSI Layer of the Fault",
+      scenario: "Two devices on the same VLAN can't communicate. You check and find one has a correctly assigned IP with the right subnet mask, but a technician recently swapped the patch cable into a port assigned to a different VLAN. What OSI layer is this fault at?",
+      options: ["Layer 1 — Physical", "Layer 2 — Data Link", "Layer 3 — Network", "Layer 4 — Transport"],
+      correctIndex: 1,
+      explanation: "VLAN assignment is a Data Link (Layer 2) concept — switches use VLAN tags/port assignments to segment broadcast domains at Layer 2. The cable itself is fine (Layer 1 is working) and the IP addressing is correct (Layer 3 is fine), so the fault is the port's VLAN membership, which is Layer 2."
+    },
+    {
+      id: "class2",
+      engine: "classification",
+      title: "Classification — Network Topology",
+      scenario: "In this topology, every device connects to a central switch. If one device's cable is unplugged, the rest of the network is unaffected, but if the central switch fails, the entire segment goes down. What topology is this?",
+      options: ["Bus", "Ring", "Star", "Mesh"],
+      correctIndex: 2,
+      explanation: "A star topology connects every device to a central point (a switch or hub). It isolates individual cable failures well, but the central device becomes a single point of failure — exactly the trade-off described here. A mesh topology, by contrast, would survive the loss of any single node."
+    }
+  ];
+
+  var state = loadState();
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.results) && parsed.results.length === QUESTIONS.length){
+          return parsed;
+        }
+      }
+    }catch(e){}
+    return {
+      current: 0,
+      results: QUESTIONS.map(function(){ return null; }),
+      answered: false
+    };
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function scoreCount(){
+    return state.results.filter(function(r){ return r === true; }).length;
+  }
+
+  var scoreText = document.getElementById("scoreText");
+  var portRail = document.getElementById("portRail");
+  var stageHost = document.getElementById("stageHost");
+  var resetBtn = document.getElementById("resetBtn");
+
+  resetBtn.addEventListener("click", function(){
+    state = { current: 0, results: QUESTIONS.map(function(){ return null; }), answered: false };
+    saveState();
+    render();
+  });
+
+  function render(){
+    scoreText.textContent = scoreCount() + " / " + QUESTIONS.length;
+    renderRail();
+
+    if(state.current >= QUESTIONS.length){
+      renderDone();
+      return;
+    }
+    var q = QUESTIONS[state.current];
+    var alreadyAnswered = state.results[state.current] !== null;
+    state.answered = alreadyAnswered;
+
+    var engineFns = {
+      sequencing: renderSequencing,
+      matching: renderMatching,
+      calculation: renderCalculation,
+      classification: renderClassification
+    };
+    stageHost.innerHTML = "";
+    var card = document.createElement("div");
+    card.className = "card";
+
+    var engLabel = document.createElement("div");
+    engLabel.className = "eng-label";
+    engLabel.textContent = "Port " + (state.current + 1) + " of " + QUESTIONS.length + " — " + engineLabelText(q.engine);
+    card.appendChild(engLabel);
+
+    var title = document.createElement("div");
+    title.className = "q-title";
+    title.textContent = q.title;
+    card.appendChild(title);
+
+    var scenario = document.createElement("div");
+    scenario.className = "q-scenario";
+    scenario.textContent = q.scenario;
+    card.appendChild(scenario);
+
+    var stage = document.createElement("div");
+    stage.className = "stage";
+    card.appendChild(stage);
+
+    stageHost.appendChild(card);
+
+    engineFns[q.engine](q, stage, card, alreadyAnswered);
+  }
+
+  function engineLabelText(e){
+    if(e === "sequencing") return "Sequencing";
+    if(e === "matching") return "Matching";
+    if(e === "calculation") return "Calculation";
+    if(e === "classification") return "Classification";
+    return e;
+  }
+
+  function renderRail(){
+    portRail.innerHTML = "";
+    QUESTIONS.forEach(function(q, i){
+      var port = document.createElement("div");
+      var cls = "port";
+      if(state.results[i] === true) cls += " done";
+      else if(state.results[i] === false) cls += " wrong";
+      else if(i === state.current) cls += " current";
+      port.className = cls;
+      var jack = document.createElement("div");
+      jack.className = "jack";
+      port.appendChild(jack);
+      var num = document.createElement("span");
+      num.textContent = i + 1;
+      port.appendChild(num);
+      portRail.appendChild(port);
+    });
+  }
+
+  function lockStage(stage){
+    stage.classList.add("locked");
+  }
+
+  function finishQuestion(stage, card, correct, explanation){
+    lockStage(stage);
+    state.results[state.current] = correct;
+    state.answered = true;
+    saveState();
+    renderRail();
+    scoreText.textContent = scoreCount() + " / " + QUESTIONS.length;
+
+    var verdict = document.createElement("div");
+    verdict.className = "verdict " + (correct ? "pass" : "fail");
+    verdict.textContent = correct ? "LINK UP — CORRECT" : "LINK DOWN — REVIEW";
+    card.appendChild(verdict);
+
+    var explain = document.createElement("div");
+    explain.className = "explain";
+    explain.innerHTML = "<b>Why:</b> " + explanation;
+    card.appendChild(explain);
+
+    var nextBtn = document.createElement("button");
+    nextBtn.className = "next-btn";
+    nextBtn.textContent = (state.current === QUESTIONS.length - 1) ? "Close panel" : "Next port →";
+    nextBtn.addEventListener("click", function(){
+      state.current += 1;
+      saveState();
+      render();
+    });
+    card.appendChild(nextBtn);
+  }
+
+  // ---------- Sequencing engine ----------
+  function renderSequencing(q, stage, card, alreadyAnswered){
+    var order = [];
+    var poolWrap = document.createElement("div");
+    poolWrap.className = "seq-pool";
+    var slotsWrap = document.createElement("div");
+    slotsWrap.className = "seq-slots";
+
+    function buildPool(){
+      poolWrap.innerHTML = "";
+      q.items.forEach(function(text, idx){
+        var chip = document.createElement("button");
+        chip.className = "seq-chip";
+        chip.type = "button";
+        chip.textContent = text;
+        chip.disabled = order.indexOf(idx) !== -1 || state.answered;
+        chip.addEventListener("click", function(){
+          if(state.answered) return;
+          order.push(idx);
+          buildPool();
+          buildSlots();
+          checkComplete();
+        });
+        poolWrap.appendChild(chip);
+      });
+    }
+
+    function buildSlots(){
+      slotsWrap.innerHTML = "";
+      q.items.forEach(function(_, i){
+        var slot = document.createElement("div");
+        var filledIdx = order[i];
+        slot.className = "seq-slot" + (filledIdx !== undefined ? " filled" : "");
+        var num = document.createElement("span");
+        num.className = "num";
+        num.textContent = (i+1) + ".";
+        slot.appendChild(num);
+        var txt = document.createElement("span");
+        txt.textContent = filledIdx !== undefined ? q.items[filledIdx] : "—";
+        slot.appendChild(txt);
+        slotsWrap.appendChild(slot);
+      });
+    }
+
+    var clearBtn = document.createElement("button");
+    clearBtn.className = "seq-clear";
+    clearBtn.type = "button";
+    clearBtn.textContent = "Clear and start over";
+    clearBtn.addEventListener("click", function(){
+      if(state.answered) return;
+      order = [];
+      buildPool();
+      buildSlots();
+      submitBtn.disabled = true;
+    });
+
+    var submitBtn = document.createElement("button");
+    submitBtn.className = "submit-btn";
+    submitBtn.textContent = "Submit sequence";
+    submitBtn.disabled = true;
+    submitBtn.addEventListener("click", function(){
+      if(state.answered) return;
+      var correct = order.length === q.correctOrder.length && order.every(function(v,i){ return v === q.correctOrder[i]; });
+      markSlotResult();
+      finishQuestion(stage, card, correct, q.explanation);
+    });
+
+    function markSlotResult(){
+      var slots = slotsWrap.querySelectorAll(".seq-slot");
+      slots.forEach(function(slotEl, i){
+        var filledIdx = order[i];
+        if(filledIdx === q.correctOrder[i]){
+          slotEl.classList.add("correct");
+        } else {
+          slotEl.classList.add("incorrect");
+        }
+      });
+    }
+
+    function checkComplete(){
+      submitBtn.disabled = order.length !== q.items.length || state.answered;
+    }
+
+    buildPool();
+    buildSlots();
+
+    stage.appendChild(poolWrap);
+    stage.appendChild(slotsWrap);
+    stage.appendChild(clearBtn);
+    stage.appendChild(submitBtn);
+
+    if(alreadyAnswered){
+      order = q.correctOrder.slice();
+      buildSlots();
+      var wasCorrect = state.results[state.current];
+      markSlotResult();
+      lockStage(stage);
+      showPastVerdict(card, wasCorrect, q.explanation);
+    }
+  }
+
+  // ---------- Matching engine ----------
+  function renderMatching(q, stage, card, alreadyAnswered){
+    var pairing = q.terms.map(function(){ return null; });
+    var activeTerm = null;
+
+    var grid = document.createElement("div");
+    grid.className = "match-grid";
+
+    var termsWrap = document.createElement("div");
+    termsWrap.className = "match-row";
+    var answersWrap = document.createElement("div");
+    answersWrap.className = "match-answers";
+
+    var termEls = [];
+
+    function buildTerms(){
+      termsWrap.innerHTML = "";
+      termEls = [];
+      q.terms.forEach(function(term, i){
+        var el = document.createElement("button");
+        el.type = "button";
+        el.className = "match-term" + (activeTerm === i ? " active-target" : "");
+        el.textContent = term;
+        if(pairing[i] !== null){
+          var tag = document.createElement("span");
+          tag.className = "paired-tag";
+          tag.textContent = String.fromCharCode(65 + pairing[i]);
+          el.appendChild(tag);
+        }
+        el.addEventListener("click", function(){
+          if(state.answered) return;
+          activeTerm = i;
+          buildTerms();
+        });
+        termEls.push(el);
+        termsWrap.appendChild(el);
+      });
+    }
+
+    function buildAnswers(){
+      answersWrap.innerHTML = "";
+      q.answers.forEach(function(ans, i){
+        var el = document.createElement("button");
+        el.type = "button";
+        el.className = "opt";
+        var idx = document.createElement("span");
+        idx.className = "idx";
+        idx.textContent = String.fromCharCode(65 + i);
+        el.appendChild(idx);
+        var txt = document.createElement("span");
+        txt.textContent = ans;
+        el.appendChild(txt);
+        el.addEventListener("click", function(){
+          if(state.answered) return;
+          if(activeTerm === null) return;
+          pairing[activeTerm] = i;
+          activeTerm = null;
+          buildTerms();
+          checkComplete();
+        });
+        answersWrap.appendChild(el);
+      });
+    }
+
+    var submitBtn = document.createElement("button");
+    submitBtn.className = "submit-btn";
+    submitBtn.textContent = "Submit matches";
+    submitBtn.disabled = true;
+    submitBtn.addEventListener("click", function(){
+      if(state.answered) return;
+      var correct = pairing.every(function(v, i){ return v === q.correctPairs[i]; });
+      lockAndMark();
+      finishQuestion(stage, card, correct, q.explanation);
+    });
+
+    function checkComplete(){
+      submitBtn.disabled = pairing.some(function(v){ return v === null; }) || state.answered;
+    }
+
+    function lockAndMark(){
+      termEls.forEach(function(el, i){
+        var right = pairing[i] === q.correctPairs[i];
+        el.classList.add(right ? "correct" : "incorrect");
+      });
+    }
+
+    buildTerms();
+    buildAnswers();
+
+    grid.appendChild(termsWrap);
+    grid.appendChild(answersWrap);
+    stage.appendChild(grid);
+    stage.appendChild(submitBtn);
+
+    if(alreadyAnswered){
+      pairing = q.correctPairs.slice();
+      buildTerms();
+      lockAndMark();
+      lockStage(stage);
+      showPastVerdict(card, state.results[state.current], q.explanation);
+    }
+  }
+
+  // ---------- Calculation engine ----------
+  function renderCalculation(q, stage, card, alreadyAnswered){
+    var calcInputs = document.createElement("div");
+    calcInputs.className = "calc-inputs";
+    Object.keys(q.values).forEach(function(k){
+      var row = document.createElement("div");
+      row.className = "calc-row";
+      var label = document.createElement("span");
+      label.textContent = k;
+      row.appendChild(label);
+      var val = document.createElement("span");
+      val.textContent = q.values[k];
+      row.appendChild(val);
+      calcInputs.appendChild(row);
+    });
+
+    var hint = document.createElement("div");
+    hint.style.fontSize = "12px";
+    hint.style.color = "var(--text-dim)";
+    hint.style.marginBottom = "12px";
+    hint.textContent = "Formula: " + q.formulaHint;
+    calcInputs.appendChild(hint);
+
+    var answerRow = document.createElement("div");
+    answerRow.className = "calc-answer-row";
+    var label = document.createElement("label");
+    label.textContent = "Usable hosts = ";
+    var input = document.createElement("input");
+    input.type = "number";
+    input.inputMode = "decimal";
+    input.placeholder = "0";
+    answerRow.appendChild(label);
+    answerRow.appendChild(input);
+
+    var submitBtn = document.createElement("button");
+    submitBtn.className = "submit-btn";
+    submitBtn.textContent = "Submit answer";
+    submitBtn.addEventListener("click", function(){
+      if(state.answered) return;
+      var val = parseFloat(input.value);
+      var correct = !isNaN(val) && Math.abs(val - q.correctAnswer) < 0.01;
+      input.style.borderColor = correct ? "var(--green)" : "var(--red)";
+      finishQuestion(stage, card, correct, q.explanation);
+    });
+
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter") submitBtn.click();
+    });
+
+    stage.appendChild(calcInputs);
+    stage.appendChild(answerRow);
+    stage.appendChild(submitBtn);
+
+    if(alreadyAnswered){
+      input.value = q.correctAnswer;
+      input.disabled = true;
+      var wasCorrect = state.results[state.current];
+      input.style.borderColor = wasCorrect ? "var(--green)" : "var(--red)";
+      lockStage(stage);
+      showPastVerdict(card, wasCorrect, q.explanation);
+    }
+  }
+
+  // ---------- Classification engine ----------
+  function renderClassification(q, stage, card, alreadyAnswered){
+    var optsWrap = document.createElement("div");
+    var optEls = [];
+    q.options.forEach(function(opt, i){
+      var el = document.createElement("button");
+      el.type = "button";
+      el.className = "opt";
+      var idx = document.createElement("span");
+      idx.className = "idx";
+      idx.textContent = String.fromCharCode(65 + i);
+      el.appendChild(idx);
+      var txt = document.createElement("span");
+      txt.textContent = opt;
+      el.appendChild(txt);
+      el.addEventListener("click", function(){
+        if(state.answered) return;
+        var correct = i === q.correctIndex;
+        optEls.forEach(function(oe, oi){
+          if(oi === q.correctIndex) oe.classList.add("correct");
+          if(oi === i && !correct) oe.classList.add("incorrect");
+          if(oi === i) oe.classList.add("selected");
+        });
+        finishQuestion(stage, card, correct, q.explanation);
+      });
+      optEls.push(el);
+      optsWrap.appendChild(el);
+    });
+    stage.appendChild(optsWrap);
+
+    if(alreadyAnswered){
+      var wasCorrect = state.results[state.current];
+      optEls.forEach(function(oe, oi){
+        if(oi === q.correctIndex) oe.classList.add("correct");
+      });
+      lockStage(stage);
+      showPastVerdict(card, wasCorrect, q.explanation);
+    }
+  }
+
+  function showPastVerdict(card, correct, explanation){
+    var verdict = document.createElement("div");
+    verdict.className = "verdict " + (correct ? "pass" : "fail");
+    verdict.textContent = correct ? "LINK UP — CORRECT" : "LINK DOWN — REVIEW";
+    card.appendChild(verdict);
+
+    var explain = document.createElement("div");
+    explain.className = "explain";
+    explain.innerHTML = "<b>Why:</b> " + explanation;
+    card.appendChild(explain);
+
+    var nextBtn = document.createElement("button");
+    nextBtn.className = "next-btn";
+    nextBtn.textContent = (state.current === QUESTIONS.length - 1) ? "Close panel" : "Next port →";
+    nextBtn.addEventListener("click", function(){
+      state.current += 1;
+      saveState();
+      render();
+    });
+    card.appendChild(nextBtn);
+  }
+
+  function renderDone(){
+    var score = scoreCount();
+    var pct = Math.round((score / QUESTIONS.length) * 100);
+    stageHost.innerHTML = "";
+    var done = document.createElement("div");
+    done.className = "done-screen";
+    var h2 = document.createElement("h2");
+    h2.textContent = "Panel fully patched";
+    done.appendChild(h2);
+    var stat = document.createElement("div");
+    stat.className = "stat-big";
+    stat.textContent = score + " / " + QUESTIONS.length;
+    done.appendChild(stat);
+    var p = document.createElement("p");
+    p.textContent = pct >= 80
+      ? "Strong run — you're handling OSI layers, addressing math, and device roles the way N10-009 actually tests them. Review anything flagged, then run it again clean."
+      : "Solid first pass. Reset progress and run it again once you've reviewed the flagged ports — repetition on PBQ-style questions is what makes the exam format stop feeling unfamiliar.";
+    done.appendChild(p);
+    var again = document.createElement("button");
+    again.className = "next-btn";
+    again.style.marginTop = "18px";
+    again.textContent = "Run it again";
+    again.addEventListener("click", function(){
+      state = { current: 0, results: QUESTIONS.map(function(){ return null; }), answered: false };
+      saveState();
+      render();
+    });
+    done.appendChild(again);
+    stageHost.appendChild(done);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

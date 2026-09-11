@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARI A+ PBQ Simulator — Core 1 &amp; Core 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#30363d;
+    --text:#c9d1d9; --text-dim:#8b949e; --amber:#f0b429; --amber-dim:#3d2f0f;
+    --green:#3fb950; --green-dim:#122117; --red:#f85149; --red-dim:#2a1315;
+    --mono:'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    --sans:'Inter', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh;}
+  .app{display:flex; min-height:100vh;}
+  .sidebar{width:260px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border); padding:1.25rem 1rem; position:sticky; top:0; height:100vh; overflow-y:auto;}
+  .brand{display:flex; align-items:center; gap:8px; margin-bottom:1.5rem;}
+  .brand-dot{width:10px; height:10px; border-radius:50%; background:var(--amber);}
+  .brand-text{font-family:var(--mono); font-size:13px; letter-spacing:0.5px; color:var(--text-dim);}
+  .brand-text b{color:var(--amber); font-weight:600;}
+  .sect-label{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); margin:1.25rem 0 0.5rem;}
+  .topic-btn{display:flex; justify-content:space-between; align-items:center; width:100%; text-align:left; background:transparent; border:1px solid transparent; color:var(--text); padding:8px 10px; border-radius:6px; font-size:13.5px; cursor:pointer; margin-bottom:2px; font-family:var(--sans);}
+  .topic-btn:hover{background:var(--panel2);}
+  .topic-btn.active{background:var(--amber-dim); border-color:var(--amber); color:var(--amber);}
+  .topic-score{font-family:var(--mono); font-size:11px; color:var(--text-dim);}
+  .topic-btn.active .topic-score{color:var(--amber);}
+  .main{flex:1; padding:2rem 2.5rem; max-width:760px;}
+  .header-row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:0.25rem;}
+  h1{font-size:20px; font-weight:600; margin:0;}
+  .overall{font-family:var(--mono); font-size:13px; color:var(--text-dim);}
+  .overall b{color:var(--green);}
+  .subtitle{color:var(--text-dim); font-size:13.5px; margin:0 0 1.75rem;}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:1.5rem;}
+  .prompt{font-size:15px; line-height:1.6; margin:0 0 1.25rem; color:var(--text);}
+  .prompt code, .mono{font-family:var(--mono);}
+  .given{font-family:var(--mono); font-size:20px; font-weight:600; color:var(--amber); margin:0 0 1.25rem;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px 16px;}
+  .field label{display:block; font-size:12px; color:var(--text-dim); margin-bottom:4px;}
+  input[type=text], select{width:100%; background:var(--panel2); border:1px solid var(--border); color:var(--text); padding:9px 10px; border-radius:6px; font-family:var(--mono); font-size:13.5px;}
+  input[type=text]:focus, select:focus{outline:none; border-color:var(--amber);}
+  .field.correct input, .field.correct select, .match-row.correct select{border-color:var(--green);}
+  .field.wrong input, .field.wrong select, .match-row.wrong select{border-color:var(--red);}
+  .btn-row{display:flex; gap:10px; margin-top:1.5rem;}
+  button.action{flex:1; background:transparent; border:1px solid var(--border); color:var(--text); padding:10px; border-radius:6px; font-size:13.5px; font-family:var(--sans); cursor:pointer;}
+  button.action:hover{background:var(--panel2);}
+  button.primary{background:var(--amber-dim); border-color:var(--amber); color:var(--amber);}
+  .match-row{display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--border);}
+  .match-row:last-child{border-bottom:none;}
+  .match-term{width:44%; font-size:13.5px; font-family:var(--mono);}
+  .match-row select{flex:1;}
+  .seq-row{display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border);}
+  .seq-row:last-child{border-bottom:none;}
+  .seq-row select{width:64px; flex:none;}
+  .seq-text{font-size:13.5px;}
+  .scenario-opt{display:block; width:100%; text-align:left; background:var(--panel2); border:1px solid var(--border); color:var(--text); padding:11px 12px; border-radius:6px; font-size:13.5px; margin-bottom:8px; cursor:pointer; font-family:var(--sans);}
+  .scenario-opt:hover{border-color:var(--amber);}
+  .scenario-opt.chosen-right{border-color:var(--green); background:var(--green-dim);}
+  .scenario-opt.chosen-wrong{border-color:var(--red); background:var(--red-dim);}
+  .feedback{font-size:13px; margin-top:14px; min-height:16px;}
+  .feedback.ok{color:var(--green);}
+  .feedback.bad{color:var(--red);}
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:50; padding:1rem;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--panel); border:1px solid var(--amber); border-radius:10px; padding:1.5rem; max-width:440px; width:100%;}
+  .modal-head{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+  .modal-head i{color:var(--red); font-size:18px;}
+  .modal-title{font-size:14px; font-weight:600; color:var(--red);}
+  .modal-body{font-size:13.5px; line-height:1.6; color:var(--text); margin-bottom:1.25rem;}
+  .modal-body b{color:var(--amber);}
+  .badge{display:inline-block; font-family:var(--mono); font-size:10.5px; padding:2px 7px; border-radius:4px; background:var(--panel2); color:var(--text-dim); border:1px solid var(--border); margin-left:8px;}
+  ::selection{background:var(--amber-dim);}
+  @media(max-width:760px){.app{flex-direction:column;} .sidebar{width:100%; height:auto; position:relative;} .main{padding:1.5rem;} .grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <div class="brand-text"><b>YARI</b> // PBQ SIMULATOR</div>
+    </div>
+    <div id="nav"></div>
+  </div>
+  <div class="main">
+    <div class="header-row">
+      <h1 id="topic-title">Loading…</h1>
+      <div class="overall" id="overall-score"></div>
+    </div>
+    <p class="subtitle" id="topic-sub"></p>
+    <div class="card" id="question-area"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head"><span>&#9888;</span><span class="modal-title">Not quite</span></div>
+    <div class="modal-body" id="modal-body"></div>
+    <button class="action primary" style="width:100%;" onclick="closeModal()">Got it — try again</button>
+  </div>
+</div>
+
+<script>
+const TOPICS = {
+  core1: [
+    { id:'subnetting', title:'Subnetting', type:'fill', desc:'Calculate mask, network, broadcast, host range, and usable hosts from a given IP/CIDR.' },
+    { id:'ports', title:'Ports & protocols', type:'match', desc:'Match each protocol to its port number(s).',
+      pairs:[
+        ['FTP','20 / 21'],['SSH','22'],['Telnet','23'],['SMTP','25'],['DNS','53'],
+        ['DHCP','67 / 68'],['HTTP','80'],['POP3','110'],['IMAP','143'],['SNMP','161 / 162'],
+        ['LDAP','389'],['HTTPS','443'],['SMB','445'],['RDP','3389']
+      ],
+      explain:'Memory aid: FTP=20/21 · SSH=22 · Telnet=23 · SMTP=25 · DNS=53 · DHCP=67/68 · HTTP=80 · POP3=110 · IMAP=143 · SNMP=161/162 · LDAP=389 · HTTPS=443 · SMB=445 · RDP=3389.' },
+    { id:'cables', title:'Cables & connectors', type:'match', desc:'Match each connector to what it is used for.',
+      pairs:[
+        ['RJ-45','Ethernet — Cat5e/6/6a, wired LAN'],
+        ['RJ-11','Telephone line'],
+        ['F-Type','Coaxial — cable TV / cable modem'],
+        ['HDMI','Digital video + audio'],
+        ['DisplayPort','Digital video + audio, daisy-chainable'],
+        ['VGA','Analog video only — legacy'],
+        ['DVI-D','Digital video only, no analog'],
+        ['USB-C (USB4/TB4)','Up to 40 Gbps, video + data + power']
+      ],
+      explain:'VGA is the only fully analog connector in this set — no digital signal, no audio. DVI-D drops the analog pins that DVI-I keeps.' },
+    { id:'dora', title:'DHCP DORA order', type:'sequence', desc:'Put the DHCP lease process in the correct order.',
+      steps:[
+        'Discover — client broadcasts for a DHCP server',
+        'Offer — server offers an available IP',
+        'Request — client broadcasts acceptance of the offer',
+        'Acknowledge — server confirms and finalizes the lease'
+      ],
+      explain:'DORA: Discover, Offer, Request, Acknowledge. The client broadcasts twice — once to find a server (Discover) and once to accept an offer (Request), which also tells other DHCP servers to withdraw their offers.' },
+    { id:'raid', title:'RAID selection', type:'scenario', desc:'Pick the correct RAID level for each scenario.',
+      questions:[
+        { q:'You have exactly 2 drives and need simple redundancy — if one drive fails, the system keeps running. Capacity is not a concern.', opts:['RAID 0','RAID 1','RAID 5','RAID 10'], answer:1,
+          explain:'RAID 1 (mirroring) needs only 2 drives and tolerates 1 failure. RAID 0 has zero redundancy. RAID 5 needs a minimum of 3 drives. RAID 10 needs 4.' },
+        { q:'You need the best balance of speed and fault tolerance with 3 drives, and can accept losing capacity to parity.', opts:['RAID 0','RAID 1','RAID 5','RAID 10'], answer:2,
+          explain:'RAID 5 (striping with parity) is the standard balance of speed and redundancy with a 3-drive minimum, tolerating 1 drive failure.' },
+        { q:'Maximum read/write speed is the priority, and you are fine with zero fault tolerance.', opts:['RAID 0','RAID 1','RAID 5','RAID 10'], answer:0,
+          explain:'RAID 0 (striping only) has no redundancy — any single drive failure loses all data — but it is the fastest RAID level.' },
+        { q:'You have 4 drives, need the best combination of performance and fault tolerance, and cost is not the deciding factor.', opts:['RAID 0','RAID 1','RAID 5','RAID 10'], answer:3,
+          explain:'RAID 10 (mirror + stripe) needs an even number of drives (minimum 4), gives the best performance plus redundancy, at the cost of losing half your capacity.' }
+      ]},
+    { id:'printer', title:'Laser printer process', type:'sequence', desc:'Put the 7-step laser printing process in order.',
+      steps:[
+        'Processing — RIP converts the print job to a bitmap',
+        'Charging — primary corona applies negative charge to drum',
+        'Exposing — laser neutralizes charge to form the latent image',
+        'Developing — toner sticks to the neutralized areas',
+        'Transferring — toner moves from drum to paper',
+        'Fusing — heat and pressure bond toner to paper',
+        'Cleaning — residual toner is scraped from the drum'
+      ],
+      explain:'Mnemonic: "Please Create Exposed Developers That Fuse Cleanly." Processing always comes first — it is pure data prep before anything physical happens. Cleaning is always last, resetting the drum for the next job.' }
+  ],
+  core2: [
+    { id:'troubleshooting', title:'Troubleshooting methodology', type:'sequence', desc:'Put the CompTIA 6-step troubleshooting process in order.',
+      steps:[
+        'Identify the problem',
+        'Establish a theory of probable cause',
+        'Test the theory to determine cause',
+        'Establish a plan of action and implement it',
+        'Verify full system functionality',
+        'Document findings, actions, and outcomes'
+      ],
+      explain:'This exact order is exam-critical. Note step 5 verifies with the USER, not just yourself — and documentation is always last, after the fix is confirmed working.' },
+    { id:'malware', title:'Malware identification', type:'match', desc:'Match each malware type to how it behaves.',
+      pairs:[
+        ['Virus','Attaches to a file — needs a host file and user action to spread'],
+        ['Worm','Self-replicates across the network with no user action needed'],
+        ['Trojan','Disguised as legitimate software, opens a backdoor'],
+        ['Ransomware','Encrypts files and demands payment'],
+        ['Rootkit','Hides at the OS/kernel level — extremely hard to detect'],
+        ['Spyware','Silently monitors activity and steals data'],
+        ['Keylogger','Records every keystroke'],
+        ['Fileless malware','Runs in memory only — no file for antivirus to scan']
+      ],
+      explain:'The key exam distinction: a virus needs a host file and user action; a worm spreads on its own over the network with no user interaction required.' },
+    { id:'wireless', title:'Wireless security — worst to best', type:'sequence', desc:'Order these Wi-Fi security protocols from weakest to strongest.',
+      steps:[
+        'WEP — RC4, broken, crackable in minutes',
+        'WPA — TKIP, a temporary fix for WEP, still weak',
+        'WPA2-Personal — AES-CCMP, PSK, acceptable standard',
+        'WPA3-Personal — AES-192+SAE, best available for home use'
+      ],
+      explain:'WEP was deprecated in 2004 and is trivially crackable. WPA was a stopgap using TKIP, which is also vulnerable. WPA2 introduced AES-CCMP as the real standard. WPA3 replaces the PSK handshake with SAE, closing offline dictionary attacks.' },
+    { id:'commands', title:'Windows command line', type:'match', desc:'Match each command to what it does.',
+      pairs:[
+        ['ipconfig /all','Shows full IP configuration detail'],
+        ['ping -t','Continuously tests connectivity to a host'],
+        ['tracert','Shows each network hop to a destination'],
+        ['nslookup','Queries DNS to resolve a hostname'],
+        ['netstat -an','Shows all active connections, numeric form'],
+        ['sfc /scannow','Scans and repairs corrupted system files'],
+        ['chkdsk /f /r','Checks the disk for errors and bad sectors'],
+        ['bootrec /fixmbr','Rewrites a corrupted Master Boot Record']
+      ],
+      explain:'sfc protects Windows system files; chkdsk protects the disk itself; bootrec repairs the boot process. Knowing which layer each command operates on is the key exam distinction.' }
+  ]
+};
+
+let state = { section:'core1', topicId: TOPICS.core1[0].id, scores: loadScores() };
+let currentAnswerKey = null;
+
+function loadScores(){
+  try{
+    const raw = localStorage.getItem('yari_pbq_scores');
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveScores(){
+  try{ localStorage.setItem('yari_pbq_scores', JSON.stringify(state.scores)); }catch(e){}
+}
+function recordResult(topicId, correct){
+  const s = state.scores[topicId] || {correct:0, total:0};
+  s.total++;
+  if(correct) s.correct++;
+  state.scores[topicId] = s;
+  saveScores();
+  renderNav();
+  renderOverall();
+}
+function findTopic(id){
+  return TOPICS.core1.find(t=>t.id===id) || TOPICS.core2.find(t=>t.id===id);
+}
+
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = '';
+  ['core1','core2'].forEach(sect=>{
+    const label = document.createElement('div');
+    label.className = 'sect-label';
+    label.textContent = sect === 'core1' ? 'A+ Core 1 · 220-1201' : 'A+ Core 2 · 220-1202';
+    nav.appendChild(label);
+    TOPICS[sect].forEach(t=>{
+      const btn = document.createElement('button');
+      btn.className = 'topic-btn' + (t.id === state.topicId ? ' active' : '');
+      const s = state.scores[t.id];
+      btn.innerHTML = '<span>'+t.title+'</span><span class="topic-score">'+(s ? s.correct+'/'+s.total : '—')+'</span>';
+      btn.onclick = () => { state.section = sect; state.topicId = t.id; renderNav(); loadTopic(); };
+      nav.appendChild(btn);
+    });
+  });
+}
+
+function renderOverall(){
+  let c=0,t=0;
+  Object.values(state.scores).forEach(s=>{ c+=s.correct; t+=s.total; });
+  document.getElementById('overall-score').innerHTML = t ? 'overall <b>'+c+'/'+t+'</b>' : '';
+}
+
+function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+function showModal(text){
+  document.getElementById('modal-body').innerHTML = text;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function loadTopic(){
+  const topic = findTopic(state.topicId);
+  document.getElementById('topic-title').textContent = topic.title;
+  document.getElementById('topic-sub').textContent = topic.desc;
+  if(topic.type === 'fill') renderFill(topic);
+  if(topic.type === 'match') renderMatch(topic);
+  if(topic.type === 'sequence') renderSequence(topic);
+  if(topic.type === 'scenario') renderScenario(topic);
+}
+
+/* ---------- FILL (subnetting) ---------- */
+function ipToInt(ip){ return ip.split('.').reduce((a,o)=>a*256+parseInt(o,10),0); }
+function intToIp(n){ return [24,16,8,0].map(s => (n>>s)&255).join('.'); }
+function maskFromCidr(c){ return c===0?0:(0xFFFFFFFF << (32-c)) >>> 0; }
+
+function renderFill(topic){
+  const area = document.getElementById('question-area');
+  const fieldDefs = [
+    {key:'mask', label:'Subnet mask'}, {key:'network', label:'Network address'},
+    {key:'broadcast', label:'Broadcast address'}, {key:'first', label:'First usable host'},
+    {key:'last', label:'Last usable host'}, {key:'hosts', label:'Usable hosts'}
+  ];
+  let answer;
+  function generate(){
+    const a = 10 + Math.floor(Math.random()*3)*20;
+    const b = Math.floor(Math.random()*255);
+    const c = Math.floor(Math.random()*255);
+    const cidrOptions = [24,25,26,27,28,29];
+    const cidr = cidrOptions[Math.floor(Math.random()*cidrOptions.length)];
+    const hostBits = 32 - cidr;
+    const blockSize = Math.pow(2, hostBits);
+    const baseInt = ipToInt(a+'.'+b+'.'+c+'.0');
+    const network = baseInt - (baseInt % blockSize);
+    const broadcast = network + blockSize - 1;
+    answer = { cidr, mask:intToIp(maskFromCidr(cidr)), network:intToIp(network), broadcast:intToIp(broadcast),
+      first:intToIp(network+1), last:intToIp(broadcast-1), hosts:String(Math.max(blockSize-2,0)) };
+    area.querySelector('.given').textContent = intToIp(network + Math.floor(blockSize/3)) + '/' + cidr;
+    area.querySelector('.feedback').textContent = '';
+    fieldDefs.forEach(f=>{
+      const wrap = document.getElementById('fw-'+f.key);
+      wrap.className = 'field';
+      document.getElementById('inp-'+f.key).value = '';
+    });
+  }
+  area.innerHTML = '<p class="prompt">Given the network below, fill in every field.</p>'+
+    '<p class="given mono"></p><div class="grid2" id="fill-grid"></div>'+
+    '<div class="btn-row"><button class="action primary" id="checkBtn">Check answers</button>'+
+    '<button class="action" id="nextBtn">New question ↻</button></div>'+
+    '<p class="feedback"></p>';
+  const grid = document.getElementById('fill-grid');
+  fieldDefs.forEach(f=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'field'; wrap.id = 'fw-'+f.key;
+    wrap.innerHTML = '<label for="inp-'+f.key+'">'+f.label+'</label><input type="text" id="inp-'+f.key+'" autocomplete="off">';
+    grid.appendChild(wrap);
+  });
+  document.getElementById('checkBtn').onclick = () => {
+    let allCorrect = true;
+    let wrongList = [];
+    fieldDefs.forEach(f=>{
+      const val = document.getElementById('inp-'+f.key).value.trim();
+      const ok = val === answer[f.key];
+      document.getElementById('fw-'+f.key).className = 'field ' + (ok ? 'correct' : 'wrong');
+      if(!ok){ allCorrect = false; wrongList.push(f.label+': <b>'+answer[f.key]+'</b>'); }
+    });
+    recordResult(topic.id, allCorrect);
+    const fb = area.querySelector('.feedback');
+    if(allCorrect){ fb.textContent = 'All fields correct.'; fb.className='feedback ok'; }
+    else{
+      fb.textContent = 'Some fields need another look.'; fb.className='feedback bad';
+      showModal('The correct values are:<br>' + wrongList.join('<br>'));
+    }
+  };
+  document.getElementById('nextBtn').onclick = generate;
+  generate();
+}
+
+/* ---------- MATCH ---------- */
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function renderMatch(topic){
+  const area = document.getElementById('question-area');
+  const round = shuffle(topic.pairs).slice(0, Math.min(8, topic.pairs.length));
+  const defs = shuffle(round.map(p=>p[1]));
+  area.innerHTML = '<p class="prompt">'+topic.desc+'</p><div id="match-list"></div>'+
+    '<div class="btn-row"><button class="action primary" id="checkBtn">Check answers</button>'+
+    '<button class="action" id="nextBtn">New round ↻</button></div><p class="feedback"></p>';
+  const list = document.getElementById('match-list');
+  round.forEach((pair, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'match-row'; row.id = 'mr-'+idx;
+    let opts = '<option value="">select…</option>' + defs.map(d=>'<option value="'+encodeURIComponent(d)+'">'+d+'</option>').join('');
+    row.innerHTML = '<div class="match-term">'+pair[0]+'</div><select id="ms-'+idx+'">'+opts+'</select>';
+    list.appendChild(row);
+  });
+  document.getElementById('checkBtn').onclick = () => {
+    let allCorrect = true; let wrongList = [];
+    round.forEach((pair, idx)=>{
+      const sel = document.getElementById('ms-'+idx);
+      const ok = decodeURIComponent(sel.value) === pair[1];
+      document.getElementById('mr-'+idx).className = 'match-row ' + (ok ? 'correct' : 'wrong');
+      if(!ok){ allCorrect = false; wrongList.push(pair[0]+' → <b>'+pair[1]+'</b>'); }
+    });
+    recordResult(topic.id, allCorrect);
+    const fb = area.querySelector('.feedback');
+    if(allCorrect){ fb.textContent = 'All matches correct.'; fb.className='feedback ok'; }
+    else{
+      fb.textContent = 'Some matches are off.'; fb.className='feedback bad';
+      showModal('Correct pairs:<br>' + wrongList.join('<br>') + (topic.explain ? '<br><br>'+topic.explain : ''));
+    }
+  };
+  document.getElementById('nextBtn').onclick = () => renderMatch(topic);
+}
+
+/* ---------- SEQUENCE ---------- */
+function renderSequence(topic){
+  const area = document.getElementById('question-area');
+  const order = shuffle(topic.steps.map((s,i)=>({text:s, correctPos:i+1})));
+  area.innerHTML = '<p class="prompt">'+topic.desc+'</p><div id="seq-list"></div>'+
+    '<div class="btn-row"><button class="action primary" id="checkBtn">Check order</button>'+
+    '<button class="action" id="nextBtn">Shuffle ↻</button></div><p class="feedback"></p>';
+  const list = document.getElementById('seq-list');
+  order.forEach((step, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'seq-row'; row.id = 'sr-'+idx;
+    let opts = '<option value="">#</option>' + topic.steps.map((_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('');
+    row.innerHTML = '<select id="ss-'+idx+'">'+opts+'</select><div class="seq-text">'+step.text+'</div>';
+    list.appendChild(row);
+  });
+  document.getElementById('checkBtn').onclick = () => {
+    let allCorrect = true;
+    order.forEach((step, idx)=>{
+      const val = parseInt(document.getElementById('ss-'+idx).value, 10);
+      const ok = val === step.correctPos;
+      document.getElementById('sr-'+idx).className = 'seq-row ' + (ok ? 'correct' : 'wrong');
+      if(!ok) allCorrect = false;
+    });
+    recordResult(topic.id, allCorrect);
+    const fb = area.querySelector('.feedback');
+    if(allCorrect){ fb.textContent = 'Correct order.'; fb.className='feedback ok'; }
+    else{
+      fb.textContent = 'Order is off.'; fb.className='feedback bad';
+      showModal('Correct order:<br>' + topic.steps.map((s,i)=>(i+1)+'. '+s).join('<br>') + (topic.explain ? '<br><br>'+topic.explain : ''));
+    }
+  };
+  document.getElementById('nextBtn').onclick = () => renderSequence(topic);
+}
+
+/* ---------- SCENARIO ---------- */
+function renderScenario(topic){
+  const area = document.getElementById('question-area');
+  const q = topic.questions[Math.floor(Math.random()*topic.questions.length)];
+  area.innerHTML = '<p class="prompt">'+q.q+'</p><div id="opt-list"></div>'+
+    '<div class="btn-row"><button class="action" id="nextBtn">New question ↻</button></div>'+
+    '<p class="feedback"></p>';
+  const list = document.getElementById('opt-list');
+  q.opts.forEach((opt, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'scenario-opt'; btn.textContent = opt;
+    btn.onclick = () => {
+      const correct = idx === q.answer;
+      [...list.children].forEach(c=>c.disabled = true);
+      btn.className = 'scenario-opt ' + (correct ? 'chosen-right' : 'chosen-wrong');
+      recordResult(topic.id, correct);
+      const fb = area.querySelector('.feedback');
+      if(correct){ fb.textContent = 'Correct.'; fb.className='feedback ok'; }
+      else{
+        fb.textContent = 'Not quite — see explanation.'; fb.className='feedback bad';
+        showModal('Correct answer: <b>'+q.opts[q.answer]+'</b><br><br>'+q.explain);
+      }
+    };
+    list.appendChild(btn);
+  });
+}
+
+renderNav();
+renderOverall();
+loadTopic();
+</script>
+</body>
+</html>

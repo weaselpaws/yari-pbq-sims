@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARI Security+ PBQ Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E8DFC8;
+    --paper-dark:#DCD0AE;
+    --paper-line:#C9BB94;
+    --ink:#24211C;
+    --ink-dim:#5C5644;
+    --redact:#171512;
+    --stamp-red:#A32B2B;
+    --stamp-red-dim:#7A1F1F;
+    --approve:#4C7A52;
+    --approve-dim:#3A5D40;
+    --gold:#8C6D1F;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --stamp:'Special Elite', cursive;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top left, rgba(140,109,31,0.06), transparent 55%),
+      radial-gradient(ellipse at bottom right, rgba(23,21,18,0.06), transparent 55%),
+      var(--paper);
+    background-attachment:fixed;
+    color:var(--ink);
+    font-family:var(--mono);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 14px 60px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wrap{width:100%;max-width:620px;}
+
+  /* header: manila folder tab */
+  .folder-tab{
+    background:var(--paper-dark);
+    border:1px solid var(--paper-line);
+    border-bottom:none;
+    border-radius:6px 6px 0 0;
+    padding:6px 16px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--ink-dim);
+    text-transform:uppercase;
+  }
+  .folder-tab .dot{width:6px;height:6px;border-radius:50%;background:var(--stamp-red);}
+  header{
+    background:var(--paper-dark);
+    border:1px solid var(--paper-line);
+    border-radius:0 8px 8px 8px;
+    padding:18px 20px;
+    margin-bottom:20px;
+  }
+  .case-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .case-id{font-size:11px;color:var(--ink-dim);letter-spacing:.04em;}
+  header h1{
+    font-family:var(--stamp);
+    font-weight:400;
+    font-size:26px;
+    line-height:1.15;
+    margin:2px 0 4px;
+    color:var(--ink);
+  }
+  header .sub{font-size:12px;color:var(--ink-dim);}
+  .score-line{
+    margin-top:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-top:1px dashed var(--paper-line);
+    padding-top:10px;
+    font-size:12px;
+  }
+  .score-line b{color:var(--ink);font-size:14px;}
+  .reset-btn{
+    background:none;
+    border:1px solid var(--ink-dim);
+    color:var(--ink-dim);
+    font-family:var(--mono);
+    font-size:11px;
+    padding:5px 10px;
+    border-radius:4px;
+    cursor:pointer;
+  }
+  .reset-btn:hover{border-color:var(--stamp-red);color:var(--stamp-red);}
+
+  /* progress dots = case files in a stack */
+  .file-track{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+  .file-chip{
+    flex:1;
+    min-width:0;
+    height:6px;
+    border-radius:3px;
+    background:var(--paper-dark);
+    border:1px solid var(--paper-line);
+  }
+  .file-chip.done{background:var(--gold);border-color:var(--gold);}
+  .file-chip.current{background:var(--ink);border-color:var(--ink);}
+  .file-chip.wrong{background:var(--stamp-red-dim);border-color:var(--stamp-red-dim);}
+
+  /* question card = a case document */
+  .card{
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-radius:8px;
+    padding:22px 20px;
+    position:relative;
+    box-shadow:0 1px 0 var(--paper-line), 0 6px 18px rgba(23,21,18,0.08);
+  }
+  .eng-label{
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:8px;
+  }
+  .q-title{
+    font-size:16px;
+    line-height:1.5;
+    color:var(--ink);
+    margin:0 0 4px;
+  }
+  .q-scenario{
+    font-size:13px;
+    line-height:1.6;
+    color:var(--ink-dim);
+    background:var(--paper-dark);
+    border-left:3px solid var(--gold);
+    padding:10px 12px;
+    border-radius:0 4px 4px 0;
+    margin:10px 0 16px;
+  }
+  .stage{margin-top:14px;}
+  .stage.locked{pointer-events:none;}
+
+  /* choice/option button used across engines */
+  .opt{
+    width:100%;
+    text-align:left;
+    background:var(--paper-dark);
+    border:1px solid var(--paper-line);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:13.5px;
+    padding:11px 14px;
+    border-radius:5px;
+    cursor:pointer;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:border-color .12s, background .12s;
+  }
+  .opt:hover{border-color:var(--gold);}
+  .opt.selected{border-color:var(--gold);background:#EFE7CF;box-shadow:inset 0 0 0 1px var(--gold);}
+  .opt.correct{border-color:var(--approve);background:#E4EDE3;color:var(--approve-dim);}
+  .opt.incorrect{border-color:var(--stamp-red);background:#F1E1DC;color:var(--stamp-red-dim);}
+  .opt .idx{
+    font-size:11px;
+    width:18px;height:18px;
+    border-radius:50%;
+    border:1px solid var(--ink-dim);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .opt.selected .idx{border-color:var(--gold);color:var(--gold);}
+  .opt.correct .idx{border-color:var(--approve);color:var(--approve);}
+  .opt.incorrect .idx{border-color:var(--stamp-red);color:var(--stamp-red);}
+
+  /* sequencing: ordered list you build by tapping */
+  .seq-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .seq-chip{
+    background:var(--paper-dark);
+    border:1px solid var(--paper-line);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:12.5px;
+    padding:8px 12px;
+    border-radius:5px;
+    cursor:pointer;
+  }
+  .seq-chip:disabled{opacity:.3;cursor:default;}
+  .seq-chip:hover:not(:disabled){border-color:var(--gold);}
+  .seq-slots{display:flex;flex-direction:column;gap:6px;}
+  .seq-slot{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--paper-dark);
+    border:1px dashed var(--paper-line);
+    border-radius:5px;
+    padding:9px 12px;
+    min-height:20px;
+    font-size:13px;
+  }
+  .seq-slot.filled{border-style:solid;}
+  .seq-slot .num{
+    font-size:11px;color:var(--gold);width:16px;flex-shrink:0;font-weight:600;
+  }
+  .seq-slot.correct{border-color:var(--approve);background:#E4EDE3;}
+  .seq-slot.incorrect{border-color:var(--stamp-red);background:#F1E1DC;}
+  .seq-clear{
+    background:none;border:none;color:var(--ink-dim);font-family:var(--mono);
+    font-size:11px;cursor:pointer;text-decoration:underline;margin-top:6px;
+  }
+
+  /* matching engine: left terms, right definitions via tap-select-pair */
+  .match-grid{display:flex;flex-direction:column;gap:14px;}
+  .match-row{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;}
+  .match-term{
+    flex:1 1 130px;
+    background:var(--paper-dark);
+    border:1px solid var(--paper-line);
+    border-radius:5px;
+    padding:10px 12px;
+    font-size:13px;
+    display:flex;align-items:center;
+  }
+  .match-answers{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+  .match-term.active-target{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);}
+  .match-term .paired-tag{
+    margin-left:auto;font-size:11px;color:var(--gold);
+    border:1px solid var(--gold);border-radius:3px;padding:2px 6px;
+  }
+
+  /* numeric calc engine */
+  .calc-inputs{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+  .calc-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;background:var(--paper-dark);border:1px solid var(--paper-line);border-radius:5px;padding:8px 12px;}
+  .calc-answer-row{display:flex;align-items:center;gap:10px;}
+  .calc-answer-row label{font-size:13px;color:var(--ink-dim);}
+  .calc-answer-row input{
+    font-family:var(--mono);
+    font-size:15px;
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-radius:5px;
+    padding:9px 10px;
+    width:130px;
+    color:var(--ink);
+  }
+  .calc-answer-row input:focus{outline:none;border-color:var(--gold);}
+
+  .submit-btn{
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    font-family:var(--stamp);
+    font-size:14px;
+    letter-spacing:.03em;
+    padding:11px 22px;
+    border-radius:5px;
+    cursor:pointer;
+    margin-top:14px;
+  }
+  .submit-btn:disabled{opacity:.35;cursor:default;}
+  .submit-btn:hover:not(:disabled){background:var(--gold);}
+
+  .next-btn{
+    background:var(--gold);
+    color:var(--paper);
+    border:none;
+    font-family:var(--stamp);
+    font-size:14px;
+    padding:11px 22px;
+    border-radius:5px;
+    cursor:pointer;
+    margin-top:16px;
+  }
+  .next-btn:hover{background:var(--ink);}
+
+  /* stamp feedback */
+  .verdict{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:var(--stamp);
+    font-size:18px;
+    letter-spacing:.04em;
+    padding:6px 14px;
+    border:2px solid;
+    border-radius:4px;
+    transform:rotate(-2deg);
+    margin-top:16px;
+  }
+  .verdict.pass{color:var(--approve);border-color:var(--approve);}
+  .verdict.fail{color:var(--stamp-red);border-color:var(--stamp-red);}
+
+  .explain{
+    margin-top:12px;
+    font-size:12.5px;
+    line-height:1.6;
+    color:var(--ink-dim);
+    background:var(--paper-dark);
+    border-left:3px solid var(--ink-dim);
+    padding:10px 12px;
+    border-radius:0 4px 4px 0;
+  }
+  .explain b{color:var(--ink);}
+
+  /* redaction bar shown before answering optional hint */
+  .redact-bar{
+    display:inline-block;
+    height:12px;
+    background:var(--redact);
+    border-radius:2px;
+    vertical-align:middle;
+  }
+
+  footer{
+    margin-top:28px;
+    text-align:center;
+    font-size:11px;
+    color:var(--ink-dim);
+    letter-spacing:.03em;
+  }
+
+  .done-screen{
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    border-radius:8px;
+    padding:36px 24px;
+    text-align:center;
+  }
+  .done-screen h2{font-family:var(--stamp);font-size:24px;margin:0 0 8px;}
+  .done-screen .stat-big{font-family:var(--stamp);font-size:44px;color:var(--gold);margin:14px 0 6px;}
+  .done-screen p{font-size:13px;color:var(--ink-dim);line-height:1.6;}
+
+  @media (max-width:420px){
+    header h1{font-size:22px;}
+    .card{padding:18px 16px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
+  }
+
+  .opt:focus-visible,.seq-chip:focus-visible,.submit-btn:focus-visible,.next-btn:focus-visible,.reset-btn:focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:2px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="folder-tab"><span class="dot"></span>CASE FILE — CompTIA SY0-701</div>
+  <header>
+    <div class="case-row">
+      <span class="case-id">FILE NO. SEC-PBQ-08</span>
+      <span class="case-id" id="dateStamp"></span>
+    </div>
+    <h1>YARI Security+ PBQ Simulator</h1>
+    <div class="sub">8 performance-based questions · 4 question types · review before you submit for exam</div>
+    <div class="score-line">
+      <div>Score: <b id="scoreText">0 / 8</b></div>
+      <button class="reset-btn" id="resetBtn">Reset progress</button>
+    </div>
+  </header>
+
+  <div class="file-track" id="fileTrack"></div>
+
+  <div id="stageHost"></div>
+
+  <footer>YARI — Yellowhammer Applied Research Institute · Study Materials · yellowhammer.institute</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "yari_secplus_pbq_v1";
+
+  var QUESTIONS = [
+    {
+      id: "seq1",
+      engine: "sequencing",
+      title: "Sequencing — Incident Response Lifecycle",
+      scenario: "A phishing email leads to a compromised workstation. Place the NIST incident response phases in the correct order, from first to last.",
+      items: [
+        "Preparation",
+        "Identification",
+        "Containment",
+        "Eradication",
+        "Recovery",
+        "Lessons Learned"
+      ],
+      correctOrder: [0,1,2,3,4,5],
+      explanation: "NIST SP 800-61 defines the incident response lifecycle as Preparation, Identification, Containment, Eradication, Recovery, and Lessons Learned (post-incident activity). Containment comes before eradication — you stop the bleeding before you remove the cause."
+    },
+    {
+      id: "seq2",
+      engine: "sequencing",
+      title: "Sequencing — Vulnerability Management Lifecycle",
+      scenario: "Your team is standing up a vulnerability management program. Place the steps in the order they should occur.",
+      items: [
+        "Identify and inventory assets",
+        "Scan for vulnerabilities",
+        "Assess and prioritize risk",
+        "Remediate findings",
+        "Verify and report"
+      ],
+      correctOrder: [0,1,2,3,4],
+      explanation: "You can't scan what you don't know you have, so asset inventory comes first. Scanning surfaces findings, prioritization ranks them by risk, remediation fixes them, and verification confirms the fix actually worked before closing the loop with reporting."
+    },
+    {
+      id: "match1",
+      engine: "matching",
+      title: "Matching — Social Engineering Channels",
+      scenario: "Match each social engineering attack to the channel or defining trait it uses.",
+      terms: ["Phishing", "Vishing", "Smishing", "Whaling"],
+      answers: [
+        "Fraudulent email trying to trick a user into an action",
+        "Voice call impersonating a trusted party",
+        "Fraudulent SMS/text message",
+        "Phishing aimed specifically at executives"
+      ],
+      correctPairs: [0,1,2,3],
+      explanation: "The attack names map to their channel: phishing = email, vishing = voice, smishing = SMS. Whaling is a phishing variant defined by its target (senior executives / \"big fish\"), not a different channel."
+    },
+    {
+      id: "match2",
+      engine: "matching",
+      title: "Matching — Security Control Types",
+      scenario: "Match each control type to an example of that control in practice.",
+      terms: ["Preventive", "Detective", "Corrective", "Deterrent"],
+      answers: [
+        "Firewall rule blocking inbound traffic on an unused port",
+        "SIEM alert firing on anomalous login behavior",
+        "Restoring a system from backup after a ransomware event",
+        "Warning banner displayed at login stating activity is monitored"
+      ],
+      correctPairs: [0,1,2,3],
+      explanation: "Preventive controls stop an event before it happens (blocking a port). Detective controls identify an event in progress or after the fact (a SIEM alert). Corrective controls fix things after an incident (restoring from backup). Deterrent controls discourage an attempt without directly blocking it (a monitoring banner)."
+    },
+    {
+      id: "calc1",
+      engine: "calculation",
+      title: "Calculation — Annualized Loss Expectancy",
+      scenario: "A risk assessment finds that a single successful ransomware event would cost the organization $50,000 (SLE). Historical data puts the likelihood at once every 5 years, giving an ARO of 0.2. Calculate the Annualized Loss Expectancy (ALE).",
+      formulaHint: "ALE = SLE × ARO",
+      values: { SLE: 50000, ARO: 0.2 },
+      correctAnswer: 10000,
+      unit: "$",
+      explanation: "ALE = SLE × ARO = $50,000 × 0.2 = $10,000. This is the figure you'd compare against the annual cost of a control to decide whether it's worth implementing."
+    },
+    {
+      id: "calc2",
+      engine: "calculation",
+      title: "Calculation — Annualized Loss Expectancy",
+      scenario: "A separate risk assessment estimates a single data-exposure incident would cost $8,000 (SLE), and the organization expects this type of event to occur about 3 times per year (ARO). Calculate the ALE.",
+      formulaHint: "ALE = SLE × ARO",
+      values: { SLE: 8000, ARO: 3 },
+      correctAnswer: 24000,
+      unit: "$",
+      explanation: "ALE = SLE × ARO = $8,000 × 3 = $24,000. Note ARO can be greater than 1 when an event is expected to happen more than once a year — it isn't a probability capped at 1."
+    },
+    {
+      id: "class1",
+      engine: "classification",
+      title: "Classification — Malware Type",
+      scenario: "An employee's workstation begins encrypting every file it can reach on local and mapped network drives, then displays a message demanding payment in cryptocurrency to restore access. What type of malware is this?",
+      options: ["Worm", "Ransomware", "Rootkit", "Logic bomb"],
+      correctIndex: 1,
+      explanation: "Encrypting files and demanding payment for the decryption key is the defining behavior of ransomware. A worm self-propagates across a network without this extortion behavior; a rootkit hides its presence rather than encrypting data; a logic bomb triggers on a specific condition rather than encrypting broadly for ransom."
+    },
+    {
+      id: "class2",
+      engine: "classification",
+      title: "Classification — Control Category",
+      scenario: "The organization requires all new hires to complete a security awareness training course before their account is activated. What category of control is this?",
+      options: ["Technical", "Administrative", "Physical", "Compensating"],
+      correctIndex: 1,
+      explanation: "Administrative controls are policies, procedures, and training — the human/process side of security. Technical controls are implemented through technology (firewalls, encryption); physical controls are tangible barriers (locks, badges); a compensating control is a substitute used when the primary control can't be applied."
+    }
+  ];
+
+  var state = loadState();
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.results) && parsed.results.length === QUESTIONS.length){
+          return parsed;
+        }
+      }
+    }catch(e){}
+    return {
+      current: 0,
+      results: QUESTIONS.map(function(){ return null; }), // null = unanswered, true/false = correct/incorrect
+      answered: false
+    };
+  }
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+  }
+
+  function scoreCount(){
+    return state.results.filter(function(r){ return r === true; }).length;
+  }
+  function attemptedCount(){
+    return state.results.filter(function(r){ return r !== null; }).length;
+  }
+
+  var scoreText = document.getElementById("scoreText");
+  var fileTrack = document.getElementById("fileTrack");
+  var stageHost = document.getElementById("stageHost");
+  var dateStamp = document.getElementById("dateStamp");
+  var resetBtn = document.getElementById("resetBtn");
+
+  dateStamp.textContent = new Date().toLocaleDateString(undefined, {year:"numeric", month:"short", day:"2-digit"}).toUpperCase();
+
+  resetBtn.addEventListener("click", function(){
+    state = { current: 0, results: QUESTIONS.map(function(){ return null; }), answered: false };
+    saveState();
+    render();
+  });
+
+  function render(){
+    scoreText.textContent = scoreCount() + " / " + QUESTIONS.length;
+    renderTrack();
+
+    if(state.current >= QUESTIONS.length){
+      renderDone();
+      return;
+    }
+    var q = QUESTIONS[state.current];
+    var alreadyAnswered = state.results[state.current] !== null;
+    state.answered = alreadyAnswered;
+
+    var engineFns = {
+      sequencing: renderSequencing,
+      matching: renderMatching,
+      calculation: renderCalculation,
+      classification: renderClassification
+    };
+    stageHost.innerHTML = "";
+    var card = document.createElement("div");
+    card.className = "card";
+
+    var engLabel = document.createElement("div");
+    engLabel.className = "eng-label";
+    engLabel.textContent = "Question " + (state.current + 1) + " of " + QUESTIONS.length + " — " + engineLabelText(q.engine);
+    card.appendChild(engLabel);
+
+    var title = document.createElement("div");
+    title.className = "q-title";
+    title.textContent = q.title;
+    card.appendChild(title);
+
+    var scenario = document.createElement("div");
+    scenario.className = "q-scenario";
+    scenario.textContent = q.scenario;
+    card.appendChild(scenario);
+
+    var stage = document.createElement("div");
+    stage.className = "stage";
+    card.appendChild(stage);
+
+    stageHost.appendChild(card);
+
+    engineFns[q.engine](q, stage, card, alreadyAnswered);
+  }
+
+  function engineLabelText(e){
+    if(e === "sequencing") return "Sequencing";
+    if(e === "matching") return "Matching";
+    if(e === "calculation") return "Calculation";
+    if(e === "classification") return "Classification";
+    return e;
+  }
+
+  function renderTrack(){
+    fileTrack.innerHTML = "";
+    QUESTIONS.forEach(function(q, i){
+      var chip = document.createElement("div");
+      var cls = "file-chip";
+      if(state.results[i] === true) cls += " done";
+      else if(state.results[i] === false) cls += " wrong";
+      else if(i === state.current) cls += " current";
+      chip.className = cls;
+      fileTrack.appendChild(chip);
+    });
+  }
+
+  function lockStage(stage){
+    stage.classList.add("locked");
+  }
+
+  function finishQuestion(stage, card, correct, explanation){
+    lockStage(stage);
+    state.results[state.current] = correct;
+    state.answered = true;
+    saveState();
+    renderTrack();
+    scoreText.textContent = scoreCount() + " / " + QUESTIONS.length;
+
+    var verdict = document.createElement("div");
+    verdict.className = "verdict " + (correct ? "pass" : "fail");
+    verdict.textContent = correct ? "VERIFIED CORRECT" : "FLAGGED — REVIEW";
+    card.appendChild(verdict);
+
+    var explain = document.createElement("div");
+    explain.className = "explain";
+    explain.innerHTML = "<b>Why:</b> " + explanation;
+    card.appendChild(explain);
+
+    var nextBtn = document.createElement("button");
+    nextBtn.className = "next-btn";
+    nextBtn.textContent = (state.current === QUESTIONS.length - 1) ? "Close case file" : "Next file →";
+    nextBtn.addEventListener("click", function(){
+      state.current += 1;
+      saveState();
+      render();
+    });
+    card.appendChild(nextBtn);
+  }
+
+  // ---------- Sequencing engine ----------
+  function renderSequencing(q, stage, card, alreadyAnswered){
+    var order = []; // indices into q.items, in chosen order
+    var poolWrap = document.createElement("div");
+    poolWrap.className = "seq-pool";
+    var slotsWrap = document.createElement("div");
+    slotsWrap.className = "seq-slots";
+
+    var chips = [];
+
+    function buildPool(){
+      poolWrap.innerHTML = "";
+      q.items.forEach(function(text, idx){
+        var chip = document.createElement("button");
+        chip.className = "seq-chip";
+        chip.type = "button";
+        chip.textContent = text;
+        chip.disabled = order.indexOf(idx) !== -1 || state.answered;
+        chip.addEventListener("click", function(){
+          if(state.answered) return;
+          order.push(idx);
+          buildPool();
+          buildSlots();
+          checkComplete();
+        });
+        chips.push(chip);
+        poolWrap.appendChild(chip);
+      });
+    }
+
+    function buildSlots(){
+      slotsWrap.innerHTML = "";
+      q.items.forEach(function(_, i){
+        var slot = document.createElement("div");
+        var filledIdx = order[i];
+        slot.className = "seq-slot" + (filledIdx !== undefined ? " filled" : "");
+        var num = document.createElement("span");
+        num.className = "num";
+        num.textContent = (i+1) + ".";
+        slot.appendChild(num);
+        var txt = document.createElement("span");
+        txt.textContent = filledIdx !== undefined ? q.items[filledIdx] : "—";
+        slot.appendChild(txt);
+        slotsWrap.appendChild(slot);
+      });
+    }
+
+    var clearBtn = document.createElement("button");
+    clearBtn.className = "seq-clear";
+    clearBtn.type = "button";
+    clearBtn.textContent = "Clear and start over";
+    clearBtn.addEventListener("click", function(){
+      if(state.answered) return;
+      order = [];
+      buildPool();
+      buildSlots();
+      submitBtn.disabled = true;
+    });
+
+    var submitBtn = document.createElement("button");
+    submitBtn.className = "submit-btn";
+    submitBtn.textContent = "Submit sequence";
+    submitBtn.disabled = true;
+    submitBtn.addEventListener("click", function(){
+      if(state.answered) return;
+      var correct = order.length === q.correctOrder.length && order.every(function(v,i){ return v === q.correctOrder[i]; });
+      markSlotResult(correct);
+      finishQuestion(stage, card, correct, q.explanation);
+    });
+
+    function markSlotResult(correct){
+      var slots = slotsWrap.querySelectorAll(".seq-slot");
+      slots.forEach(function(slotEl, i){
+        var filledIdx = order[i];
+        if(filledIdx === q.correctOrder[i]){
+          slotEl.classList.add("correct");
+        } else {
+          slotEl.classList.add("incorrect");
+        }
+      });
+    }
+
+    function checkComplete(){
+      submitBtn.disabled = order.length !== q.items.length || state.answered;
+    }
+
+    buildPool();
+    buildSlots();
+
+    stage.appendChild(poolWrap);
+    stage.appendChild(slotsWrap);
+    stage.appendChild(clearBtn);
+    stage.appendChild(submitBtn);
+
+    if(alreadyAnswered){
+      order = q.correctOrder.slice();
+      buildSlots();
+      var wasCorrect = state.results[state.current];
+      markSlotResult(wasCorrect);
+      lockStage(stage);
+      showPastVerdict(card, wasCorrect, q.explanation);
+    }
+  }
+
+  // ---------- Matching engine ----------
+  function renderMatching(q, stage, card, alreadyAnswered){
+    // pairing[termIndex] = answerIndex chosen, or null
+    var pairing = q.terms.map(function(){ return null; });
+    var activeTerm = null;
+
+    var grid = document.createElement("div");
+    grid.className = "match-grid";
+
+    var termsWrap = document.createElement("div");
+    termsWrap.className = "match-row";
+    var answersWrap = document.createElement("div");
+    answersWrap.className = "match-answers";
+
+    var termEls = [];
+
+    function buildTerms(){
+      termsWrap.innerHTML = "";
+      termEls = [];
+      q.terms.forEach(function(term, i){
+        var el = document.createElement("button");
+        el.type = "button";
+        el.className = "match-term" + (activeTerm === i ? " active-target" : "");
+        el.textContent = term;
+        if(pairing[i] !== null){
+          var tag = document.createElement("span");
+          tag.className = "paired-tag";
+          tag.textContent = String.fromCharCode(65 + pairing[i]);
+          el.appendChild(tag);
+        }
+        el.addEventListener("click", function(){
+          if(state.answered) return;
+          activeTerm = i;
+          buildTerms();
+        });
+        termEls.push(el);
+        termsWrap.appendChild(el);
+      });
+    }
+
+    function buildAnswers(){
+      answersWrap.innerHTML = "";
+      q.answers.forEach(function(ans, i){
+        var el = document.createElement("button");
+        el.type = "button";
+        el.className = "opt";
+        var idx = document.createElement("span");
+        idx.className = "idx";
+        idx.textContent = String.fromCharCode(65 + i);
+        el.appendChild(idx);
+        var txt = document.createElement("span");
+        txt.textContent = ans;
+        el.appendChild(txt);
+        el.addEventListener("click", function(){
+          if(state.answered) return;
+          if(activeTerm === null) return;
+          pairing[activeTerm] = i;
+          activeTerm = null;
+          buildTerms();
+          checkComplete();
+        });
+        answersWrap.appendChild(el);
+      });
+    }
+
+    var submitBtn = document.createElement("button");
+    submitBtn.className = "submit-btn";
+    submitBtn.textContent = "Submit matches";
+    submitBtn.disabled = true;
+    submitBtn.addEventListener("click", function(){
+      if(state.answered) return;
+      var correct = pairing.every(function(v, i){ return v === q.correctPairs[i]; });
+      lockAndMark(correct);
+      finishQuestion(stage, card, correct, q.explanation);
+    });
+
+    function checkComplete(){
+      submitBtn.disabled = pairing.some(function(v){ return v === null; }) || state.answered;
+    }
+
+    function lockAndMark(){
+      termEls.forEach(function(el, i){
+        var right = pairing[i] === q.correctPairs[i];
+        el.classList.add(right ? "correct" : "incorrect");
+      });
+    }
+
+    buildTerms();
+    buildAnswers();
+
+    grid.appendChild(termsWrap);
+    grid.appendChild(answersWrap);
+    stage.appendChild(grid);
+    stage.appendChild(submitBtn);
+
+    if(alreadyAnswered){
+      pairing = q.correctPairs.slice();
+      buildTerms();
+      lockAndMark();
+      lockStage(stage);
+      showPastVerdict(card, state.results[state.current], q.explanation);
+    }
+  }
+
+  // ---------- Calculation engine ----------
+  function renderCalculation(q, stage, card, alreadyAnswered){
+    var calcInputs = document.createElement("div");
+    calcInputs.className = "calc-inputs";
+    Object.keys(q.values).forEach(function(k){
+      var row = document.createElement("div");
+      row.className = "calc-row";
+      var label = document.createElement("span");
+      label.textContent = k + (k === "ARO" ? " (Annualized Rate of Occurrence)" : " (Single Loss Expectancy)");
+      row.appendChild(label);
+      var val = document.createElement("span");
+      val.textContent = (k === "SLE" ? "$" : "") + q.values[k];
+      row.appendChild(val);
+      calcInputs.appendChild(row);
+    });
+
+    var hint = document.createElement("div");
+    hint.style.fontSize = "12px";
+    hint.style.color = "var(--ink-dim)";
+    hint.style.marginBottom = "12px";
+    hint.textContent = "Formula: " + q.formulaHint;
+    calcInputs.appendChild(hint);
+
+    var answerRow = document.createElement("div");
+    answerRow.className = "calc-answer-row";
+    var label = document.createElement("label");
+    label.textContent = "ALE = ";
+    var input = document.createElement("input");
+    input.type = "number";
+    input.inputMode = "decimal";
+    input.placeholder = "0";
+    answerRow.appendChild(label);
+    answerRow.appendChild(input);
+
+    var submitBtn = document.createElement("button");
+    submitBtn.className = "submit-btn";
+    submitBtn.textContent = "Submit answer";
+    submitBtn.addEventListener("click", function(){
+      if(state.answered) return;
+      var val = parseFloat(input.value);
+      var correct = !isNaN(val) && Math.abs(val - q.correctAnswer) < 0.01;
+      input.style.borderColor = correct ? "var(--approve)" : "var(--stamp-red)";
+      finishQuestion(stage, card, correct, q.explanation);
+    });
+
+    input.addEventListener("keydown", function(e){
+      if(e.key === "Enter") submitBtn.click();
+    });
+
+    stage.appendChild(calcInputs);
+    stage.appendChild(answerRow);
+    stage.appendChild(submitBtn);
+
+    if(alreadyAnswered){
+      input.value = q.correctAnswer;
+      input.disabled = true;
+      var wasCorrect = state.results[state.current];
+      input.style.borderColor = wasCorrect ? "var(--approve)" : "var(--stamp-red)";
+      lockStage(stage);
+      showPastVerdict(card, wasCorrect, q.explanation);
+    }
+  }
+
+  // ---------- Classification engine ----------
+  function renderClassification(q, stage, card, alreadyAnswered){
+    var optsWrap = document.createElement("div");
+    var optEls = [];
+    q.options.forEach(function(opt, i){
+      var el = document.createElement("button");
+      el.type = "button";
+      el.className = "opt";
+      var idx = document.createElement("span");
+      idx.className = "idx";
+      idx.textContent = String.fromCharCode(65 + i);
+      el.appendChild(idx);
+      var txt = document.createElement("span");
+      txt.textContent = opt;
+      el.appendChild(txt);
+      el.addEventListener("click", function(){
+        if(state.answered) return;
+        var correct = i === q.correctIndex;
+        optEls.forEach(function(oe, oi){
+          if(oi === q.correctIndex) oe.classList.add("correct");
+          if(oi === i && !correct) oe.classList.add("incorrect");
+          if(oi === i) oe.classList.add("selected");
+        });
+        finishQuestion(stage, card, correct, q.explanation);
+      });
+      optEls.push(el);
+      optsWrap.appendChild(el);
+    });
+    stage.appendChild(optsWrap);
+
+    if(alreadyAnswered){
+      var wasCorrect = state.results[state.current];
+      optEls.forEach(function(oe, oi){
+        if(oi === q.correctIndex) oe.classList.add("correct");
+      });
+      if(!wasCorrect){
+        // we don't know which wrong one was picked on reload; just mark correct answer
+      }
+      lockStage(stage);
+      showPastVerdict(card, wasCorrect, q.explanation);
+    }
+  }
+
+  function showPastVerdict(card, correct, explanation){
+    var verdict = document.createElement("div");
+    verdict.className = "verdict " + (correct ? "pass" : "fail");
+    verdict.textContent = correct ? "VERIFIED CORRECT" : "FLAGGED — REVIEW";
+    card.appendChild(verdict);
+
+    var explain = document.createElement("div");
+    explain.className = "explain";
+    explain.innerHTML = "<b>Why:</b> " + explanation;
+    card.appendChild(explain);
+
+    var nextBtn = document.createElement("button");
+    nextBtn.className = "next-btn";
+    nextBtn.textContent = (state.current === QUESTIONS.length - 1) ? "Close case file" : "Next file →";
+    nextBtn.addEventListener("click", function(){
+      state.current += 1;
+      saveState();
+      render();
+    });
+    card.appendChild(nextBtn);
+  }
+
+  function renderDone(){
+    var score = scoreCount();
+    var pct = Math.round((score / QUESTIONS.length) * 100);
+    stageHost.innerHTML = "";
+    var done = document.createElement("div");
+    done.className = "done-screen";
+    var h2 = document.createElement("h2");
+    h2.textContent = "Case file closed";
+    done.appendChild(h2);
+    var stat = document.createElement("div");
+    stat.className = "stat-big";
+    stat.textContent = score + " / " + QUESTIONS.length;
+    done.appendChild(stat);
+    var p = document.createElement("p");
+    p.textContent = pct >= 80
+      ? "That's a strong result — you're reading these scenarios the way SY0-701 actually tests them. Review anything you missed, then try again for a clean file."
+      : "Solid first pass. Reset progress and run it again once you've reviewed the flagged items — repetition on PBQ-style questions is what makes the exam format stop feeling unfamiliar.";
+    done.appendChild(p);
+    var again = document.createElement("button");
+    again.className = "next-btn";
+    again.style.marginTop = "18px";
+    again.textContent = "Run it again";
+    again.addEventListener("click", function(){
+      state = { current: 0, results: QUESTIONS.map(function(){ return null; }), answered: false };
+      saveState();
+      render();
+    });
+    done.appendChild(again);
+    stageHost.appendChild(done);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

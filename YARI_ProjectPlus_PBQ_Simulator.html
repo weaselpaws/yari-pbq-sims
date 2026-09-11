@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARI Project+ PBQ Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0B2545;
+    --surface:#12345C;
+    --surface-2:#163C68;
+    --grid:#1E4976;
+    --paper:#F4F1E8;
+    --paper-dim:#B9C6D6;
+    --amber:#E8A33D;
+    --amber-dim:#B87F2A;
+    --coral:#E76F51;
+    --green:#6FA98A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background-color:var(--navy);
+    background-image:
+      repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 32px),
+      repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 32px);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px 60px;
+  }
+  .wrap{width:100%;max-width:640px;}
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:1px solid var(--grid);
+    padding-bottom:14px;
+    margin-bottom:22px;
+  }
+  .brand{display:flex;flex-direction:column;gap:2px;}
+  .brand .inst{font-size:11px;letter-spacing:.04em;color:var(--paper-dim);}
+  .brand h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:21px;
+    font-weight:600;
+    margin:0;
+    line-height:1.15;
+  }
+  .progress-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    color:var(--amber);
+    text-align:right;
+  }
+  .progress-track{
+    height:3px;width:100%;background:var(--grid);
+    margin-bottom:28px;border-radius:2px;overflow:hidden;
+  }
+  .progress-fill{height:100%;background:var(--amber);transition:width .35s ease;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--grid);
+    border-radius:6px;
+    padding:22px 20px;
+    position:relative;
+  }
+  .engine-tag{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--amber);
+    border:1px solid var(--amber-dim);
+    padding:3px 8px;
+    border-radius:3px;
+    margin-bottom:14px;
+  }
+  .prompt{
+    font-size:17px;
+    line-height:1.45;
+    margin:0 0 18px;
+    color:var(--paper);
+  }
+  .prompt strong{color:var(--amber);font-weight:600;}
+  .sub{font-size:13px;color:var(--paper-dim);margin:-10px 0 18px;line-height:1.5;}
+
+  /* Sequencing engine */
+  .seq-pool, .seq-answer{
+    display:flex;flex-wrap:wrap;gap:8px;
+    min-height:46px;
+    padding:10px;
+    border:1px dashed var(--grid);
+    border-radius:5px;
+    margin-bottom:12px;
+  }
+  .seq-answer{border-style:solid;background:var(--surface-2);}
+  .chip{
+    background:var(--surface-2);
+    border:1px solid var(--grid);
+    color:var(--paper);
+    padding:8px 12px;
+    border-radius:4px;
+    font-size:14px;
+    cursor:pointer;
+    user-select:none;
+    transition:transform .1s ease, border-color .15s ease;
+  }
+  .chip:active{transform:scale(0.97);}
+  .seq-answer .chip{background:var(--navy);border-color:var(--amber-dim);}
+  .seq-answer .chip .idx{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--amber);
+    margin-right:8px;
+    font-size:12px;
+  }
+
+  /* Matching engine */
+  .match-grid{display:flex;gap:16px;}
+  .match-col{flex:1;display:flex;flex-direction:column;gap:8px;}
+  .match-col-label{font-size:11px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;}
+  .match-item{
+    background:var(--surface-2);
+    border:1px solid var(--grid);
+    padding:10px 12px;
+    border-radius:4px;
+    font-size:13.5px;
+    line-height:1.35;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .match-item.selected{border-color:var(--amber);background:#1B4470;}
+  .match-item.locked{border-color:var(--green);background:#173A2E;color:var(--paper-dim);cursor:default;}
+  .match-item.wrong-flash{border-color:var(--coral);}
+
+  /* Calculation engine */
+  .calc-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:14px;}
+  .calc-table td{padding:6px 4px;border-bottom:1px solid var(--grid);}
+  .calc-table td:first-child{color:var(--paper-dim);width:55%;}
+  .calc-table td:last-child{font-family:'IBM Plex Mono',monospace;color:var(--amber);text-align:right;}
+  .calc-inputs{display:flex;flex-direction:column;gap:10px;margin-bottom:6px;}
+  .calc-field{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .calc-field label{font-size:13.5px;color:var(--paper-dim);}
+  .calc-field input{
+    width:100px;
+    background:var(--navy);
+    border:1px solid var(--grid);
+    color:var(--paper);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14px;
+    padding:7px 8px;
+    border-radius:4px;
+    text-align:right;
+  }
+  .calc-field input:focus{outline:none;border-color:var(--amber);}
+
+  /* Classification engine */
+  .class-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .buckets{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .bucket{
+    border:1px dashed var(--grid);
+    border-radius:5px;
+    padding:8px;
+    min-height:64px;
+  }
+  .bucket-label{font-size:11px;color:var(--paper-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;}
+  .bucket .chip{display:block;margin-bottom:6px;font-size:12.5px;}
+  .chip.active-pick{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber);}
+
+  .controls{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:22px;
+  }
+  button{
+    font-family:'IBM Plex Sans',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:11px 18px;
+    border-radius:5px;
+    border:1px solid transparent;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--amber);color:var(--navy);}
+  .btn-primary:disabled{background:var(--grid);color:var(--paper-dim);cursor:not-allowed;}
+  .btn-ghost{background:transparent;color:var(--paper-dim);border-color:var(--grid);}
+  .feedback{
+    margin-top:14px;
+    font-size:13.5px;
+    padding:10px 12px;
+    border-radius:4px;
+    display:none;
+  }
+  .feedback.show{display:block;}
+  .feedback.correct{background:#173A2E;color:var(--green);border:1px solid var(--green);}
+  .feedback.incorrect{background:#3A1F1A;color:var(--coral);border:1px solid var(--coral);}
+
+  /* Results screen */
+  .results h2{font-family:'Space Grotesk',sans-serif;font-size:22px;margin:0 0 6px;}
+  .score-big{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:44px;
+    color:var(--amber);
+    margin:10px 0 4px;
+  }
+  .breakdown{margin-top:20px;display:flex;flex-direction:column;gap:8px;}
+  .breakdown-row{
+    display:flex;justify-content:space-between;
+    font-size:13.5px;
+    border-bottom:1px solid var(--grid);
+    padding-bottom:8px;
+  }
+  .breakdown-row span:last-child{font-family:'IBM Plex Mono',monospace;color:var(--paper-dim);}
+
+  footer{margin-top:30px;font-size:11px;color:var(--paper-dim);text-align:center;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="inst">YELLOWHAMMER APPLIED RESEARCH INSTITUTE</div>
+      <h1>Project+ PBQ Simulator</h1>
+    </div>
+    <div class="progress-label" id="progressLabel">Q1 / 8</div>
+  </header>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:12.5%"></div></div>
+
+  <div id="stage"></div>
+</div>
+
+<footer>Practice tool for CompTIA Project+ prep &middot; Progress is saved on this device only</footer>
+
+<script>
+(function(){
+
+const STORAGE_KEY = "yari_projectplus_pbq_v1";
+
+const questions = [
+  // 1. Sequencing — process groups
+  {
+    engine:"sequence",
+    tag:"SEQUENCING",
+    prompt:"Arrange the five <strong>process groups</strong> in the order they occur across a project's life cycle.",
+    sub:"Tap each item in the correct order. Tap a placed item to undo it.",
+    items:["Executing","Closing","Initiating","Monitoring &amp; Controlling","Planning"],
+    answer:["Initiating","Planning","Executing","Monitoring &amp; Controlling","Closing"]
+  },
+  // 2. Sequencing — change control
+  {
+    engine:"sequence",
+    tag:"SEQUENCING",
+    prompt:"Put the steps of a standard <strong>change control process</strong> in order.",
+    sub:"Tap each item in the correct order.",
+    items:["Update the baseline and communicate the change","Submit a change request","Change Control Board reviews and decides","Assess impact on scope, schedule, and cost"],
+    answer:["Submit a change request","Assess impact on scope, schedule, and cost","Change Control Board reviews and decides","Update the baseline and communicate the change"]
+  },
+  // 3. Matching — terms
+  {
+    engine:"match",
+    tag:"MATCHING",
+    prompt:"Match each term to its correct definition.",
+    sub:"Tap a term, then tap its matching definition.",
+    left:["Float","Critical Path","Scope Creep","Baseline"],
+    right:[
+      "The longest sequence of dependent tasks that determines the shortest possible project duration",
+      "Uncontrolled expansion of project scope without corresponding adjustments to time, cost, or resources",
+      "The approved version of a project plan used as a fixed point of comparison",
+      "The amount of time a task can slip without delaying the project finish date"
+    ],
+    pairs:{0:3,1:0,2:1,3:2} // left index -> right index
+  },
+  // 4. Matching — tools
+  {
+    engine:"match",
+    tag:"MATCHING",
+    prompt:"Match each project management tool to its primary purpose.",
+    sub:"Tap a tool, then tap its matching purpose.",
+    left:["Gantt Chart","RACI Matrix","Risk Register","Fishbone Diagram"],
+    right:[
+      "Identifies who is Responsible, Accountable, Consulted, and Informed for each task",
+      "Visualizes task schedules and durations as horizontal bars across a timeline",
+      "Traces a problem back to its root cause across categories like people, process, and equipment",
+      "Logs identified risks along with their probability, impact, and response plan"
+    ],
+    pairs:{0:1,1:0,2:3,3:2}
+  },
+  // 5. Calculation — EVM
+  {
+    engine:"calc",
+    tag:"CALCULATION",
+    prompt:"Using the earned value data below, calculate the <strong>Cost Performance Index (CPI)</strong> and <strong>Schedule Performance Index (SPI)</strong>.",
+    sub:"CPI = EV &divide; AC &nbsp;&nbsp;&middot;&nbsp;&nbsp; SPI = EV &divide; PV &nbsp;&nbsp;&middot;&nbsp;&nbsp; Round to 2 decimal places.",
+    table:[["Planned Value (PV)","$40,000"],["Earned Value (EV)","$36,000"],["Actual Cost (AC)","$30,000"]],
+    fields:[
+      {id:"cpi", label:"CPI", answer:1.20, tolerance:0.02},
+      {id:"spi", label:"SPI", answer:0.90, tolerance:0.02}
+    ]
+  },
+  // 6. Calculation — critical path / float
+  {
+    engine:"calc",
+    tag:"CALCULATION",
+    prompt:"A project has two paths from start to finish: Path A takes <strong>22 days</strong>, Path B takes <strong>17 days</strong>.",
+    sub:"Enter the critical path duration, and the total float available on Path B.",
+    table:[["Path A duration","22 days"],["Path B duration","17 days"]],
+    fields:[
+      {id:"cp", label:"Critical path (days)", answer:22, tolerance:0},
+      {id:"float", label:"Float on Path B (days)", answer:5, tolerance:0}
+    ]
+  },
+  // 7. Classification — knowledge areas
+  {
+    engine:"classify",
+    tag:"CLASSIFICATION",
+    prompt:"Sort each scenario into the <strong>knowledge area</strong> it best represents.",
+    sub:"Tap a scenario, then tap the bucket it belongs in.",
+    items:[
+      {text:"The client adds three new deliverables mid-project without adjusting the deadline", bucket:0},
+      {text:"The team debates whether to escalate a vendor delay to the sponsor immediately or wait for the weekly update", bucket:1},
+      {text:"A key supplier's parts cost rises 15%, pushing the project over its approved budget", bucket:2}
+    ],
+    buckets:["Scope","Communications","Cost"]
+  },
+  // 8. Classification — process groups
+  {
+    engine:"classify",
+    tag:"CLASSIFICATION",
+    prompt:"Sort each activity into the <strong>process group</strong> it belongs to.",
+    sub:"Tap an activity, then tap the bucket it belongs in.",
+    items:[
+      {text:"Drafting the project charter and identifying stakeholders", bucket:0},
+      {text:"Comparing actual progress against the schedule baseline and issuing status reports", bucket:1},
+      {text:"Releasing project resources and archiving lessons learned", bucket:2}
+    ],
+    buckets:["Initiating","Monitoring &amp; Controlling","Closing"]
+  }
+];
+
+let state = {
+  index:0,
+  score:0,
+  results:[], // {engine, correct}
+  answered:false,
+  seqPicked:[],
+  matchLeftSel:null,
+  matchLocked:{},
+  classifyPicked:null,
+  classifyAssign:{}
+};
+
+function save(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      index:state.index, score:state.score, results:state.results
+    }));
+  }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const d = JSON.parse(raw);
+      if(typeof d.index === "number" && d.index < questions.length){
+        state.index = d.index; state.score = d.score; state.results = d.results || [];
+      }
+    }
+  }catch(e){}
+}
+
+const stage = document.getElementById("stage");
+const progressLabel = document.getElementById("progressLabel");
+const progressFill = document.getElementById("progressFill");
+
+function updateProgress(){
+  progressLabel.textContent = "Q" + Math.min(state.index+1, questions.length) + " / " + questions.length;
+  progressFill.style.width = (Math.min(state.index, questions.length) / questions.length * 100) + "%";
+}
+
+function render(){
+  updateProgress();
+  if(state.index >= questions.length){ renderResults(); return; }
+  const q = questions[state.index];
+  resetInteractionState();
+  if(q.engine === "sequence") renderSequence(q);
+  else if(q.engine === "match") renderMatch(q);
+  else if(q.engine === "calc") renderCalc(q);
+  else if(q.engine === "classify") renderClassify(q);
+}
+
+function resetInteractionState(){
+  state.answered = false;
+  state.seqPicked = [];
+  state.matchLeftSel = null;
+  state.matchLocked = {};
+  state.classifyPicked = null;
+  state.classifyAssign = {};
+}
+
+function cardShell(q, bodyHtml){
+  return `
+    <div class="card">
+      <span class="engine-tag">${q.tag}</span>
+      <p class="prompt">${q.prompt}</p>
+      ${q.sub ? `<p class="sub">${q.sub}</p>` : ""}
+      ${bodyHtml}
+      <div class="feedback" id="feedback"></div>
+      <div class="controls">
+        <button class="btn-ghost" id="skipBtn">Skip</button>
+        <button class="btn-primary" id="checkBtn" disabled>Check answer</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- Sequencing ---------- */
+function renderSequence(q){
+  const shuffled = [...q.items].sort(()=>Math.random()-0.5);
+  stage.innerHTML = cardShell(q, `
+    <div class="seq-answer" id="seqAnswer"></div>
+    <div class="seq-pool" id="seqPool"></div>
+  `);
+  const pool = document.getElementById("seqPool");
+  const answer = document.getElementById("seqAnswer");
+
+  function renderChips(){
+    pool.innerHTML = "";
+    answer.innerHTML = "";
+    shuffled.forEach(item=>{
+      if(!state.seqPicked.includes(item)){
+        const c = document.createElement("div");
+        c.className = "chip";
+        c.innerHTML = item;
+        c.onclick = ()=>{ if(state.answered) return; state.seqPicked.push(item); renderChips(); };
+        pool.appendChild(c);
+      }
+    });
+    state.seqPicked.forEach((item, i)=>{
+      const c = document.createElement("div");
+      c.className = "chip";
+      c.innerHTML = `<span class="idx">${i+1}</span>${item}`;
+      c.onclick = ()=>{ if(state.answered) return; state.seqPicked.splice(i,1); renderChips(); };
+      answer.appendChild(c);
+    });
+    document.getElementById("checkBtn").disabled = state.seqPicked.length !== q.items.length;
+  }
+  renderChips();
+
+  document.getElementById("checkBtn").onclick = ()=>{
+    const correct = JSON.stringify(state.seqPicked) === JSON.stringify(q.answer);
+    finishQuestion(correct, q);
+  };
+  document.getElementById("skipBtn").onclick = ()=> finishQuestion(false, q, true);
+}
+
+/* ---------- Matching ---------- */
+function renderMatch(q){
+  const rightOrder = [...q.right.keys()].sort(()=>Math.random()-0.5);
+  stage.innerHTML = cardShell(q, `
+    <div class="match-grid">
+      <div class="match-col">
+        <div class="match-col-label">Term</div>
+        <div id="matchLeft"></div>
+      </div>
+      <div class="match-col">
+        <div class="match-col-label">Definition</div>
+        <div id="matchRight"></div>
+      </div>
+    </div>
+  `);
+  const leftCol = document.getElementById("matchLeft");
+  const rightCol = document.getElementById("matchRight");
+
+  function checkComplete(){
+    document.getElementById("checkBtn").disabled = Object.keys(state.matchLocked).length !== q.left.length;
+  }
+
+  q.left.forEach((label, li)=>{
+    const el = document.createElement("div");
+    el.className = "match-item";
+    el.textContent = label;
+    el.onclick = ()=>{
+      if(state.answered) return;
+      if(state.matchLocked[li] !== undefined) return;
+      document.querySelectorAll("#matchLeft .match-item").forEach(e=>e.classList.remove("selected"));
+      state.matchLeftSel = li;
+      el.classList.add("selected");
+    };
+    leftCol.appendChild(el);
+  });
+
+  rightOrder.forEach(ri=>{
+    const el = document.createElement("div");
+    el.className = "match-item";
+    el.textContent = q.right[ri];
+    el.onclick = ()=>{
+      if(state.answered) return;
+      if(state.matchLeftSel === null) return;
+      const li = state.matchLeftSel;
+      if(state.matchLocked[li] !== undefined) return;
+      if(q.pairs[li] === ri){
+        state.matchLocked[li] = ri;
+        document.querySelectorAll("#matchLeft .match-item")[li].classList.add("locked");
+        document.querySelectorAll("#matchLeft .match-item")[li].classList.remove("selected");
+        el.classList.add("locked");
+        state.matchLeftSel = null;
+        checkComplete();
+      } else {
+        el.classList.add("wrong-flash");
+        setTimeout(()=>el.classList.remove("wrong-flash"), 400);
+      }
+    };
+    rightCol.appendChild(el);
+  });
+
+  document.getElementById("checkBtn").onclick = ()=> finishQuestion(true, q);
+  document.getElementById("skipBtn").onclick = ()=> finishQuestion(false, q, true);
+}
+
+/* ---------- Calculation ---------- */
+function renderCalc(q){
+  const tableRows = q.table.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+  const fieldRows = q.fields.map(f=>`
+    <div class="calc-field">
+      <label for="f_${f.id}">${f.label}</label>
+      <input type="number" step="any" id="f_${f.id}">
+    </div>`).join("");
+  stage.innerHTML = cardShell(q, `
+    <table class="calc-table">${tableRows}</table>
+    <div class="calc-inputs">${fieldRows}</div>
+  `);
+  function checkFilled(){
+    if(state.answered) return;
+    const filled = q.fields.every(f=> document.getElementById("f_"+f.id).value !== "");
+    document.getElementById("checkBtn").disabled = !filled;
+  }
+  q.fields.forEach(f=>{
+    document.getElementById("f_"+f.id).addEventListener("input", checkFilled);
+  });
+  document.getElementById("checkBtn").onclick = ()=>{
+    const correct = q.fields.every(f=>{
+      const v = parseFloat(document.getElementById("f_"+f.id).value);
+      return Math.abs(v - f.answer) <= (f.tolerance || 0);
+    });
+    finishQuestion(correct, q);
+  };
+  document.getElementById("skipBtn").onclick = ()=> finishQuestion(false, q, true);
+}
+
+/* ---------- Classification ---------- */
+function renderClassify(q){
+  stage.innerHTML = cardShell(q, `
+    <div class="class-pool" id="classPool"></div>
+    <div class="buckets" id="classBuckets"></div>
+  `);
+  const pool = document.getElementById("classPool");
+  const bucketsEl = document.getElementById("classBuckets");
+
+  q.buckets.forEach((label, bi)=>{
+    const b = document.createElement("div");
+    b.className = "bucket";
+    b.innerHTML = `<div class="bucket-label">${label}</div>`;
+    b.onclick = ()=>{
+      if(state.answered) return;
+      if(state.classifyPicked === null) return;
+      state.classifyAssign[state.classifyPicked] = bi;
+      renderAll();
+    };
+    bucketsEl.appendChild(b);
+  });
+
+  function renderAll(){
+    pool.innerHTML = "";
+    q.items.forEach((item, ii)=>{
+      if(state.classifyAssign[ii] === undefined){
+        const c = document.createElement("div");
+        c.className = "chip" + (state.classifyPicked === ii ? " active-pick" : "");
+        c.textContent = item.text;
+        c.onclick = ()=>{ if(state.answered) return; state.classifyPicked = ii; renderAll(); };
+        pool.appendChild(c);
+      }
+    });
+    document.querySelectorAll("#classBuckets .bucket").forEach((b, bi)=>{
+      b.querySelectorAll(".chip").forEach(e=>e.remove());
+      Object.keys(state.classifyAssign).forEach(ii=>{
+        if(state.classifyAssign[ii] === bi){
+          const c = document.createElement("div");
+          c.className = "chip";
+          c.textContent = q.items[ii].text;
+          c.onclick = ()=>{ if(state.answered) return; delete state.classifyAssign[ii]; renderAll(); };
+          b.appendChild(c);
+        }
+      });
+    });
+    document.getElementById("checkBtn").disabled = Object.keys(state.classifyAssign).length !== q.items.length;
+  }
+  renderAll();
+
+  document.getElementById("checkBtn").onclick = ()=>{
+    const correct = q.items.every((item, ii)=> state.classifyAssign[ii] === item.bucket);
+    finishQuestion(correct, q);
+  };
+  document.getElementById("skipBtn").onclick = ()=> finishQuestion(false, q, true);
+}
+
+/* ---------- Shared finish/advance ---------- */
+function finishQuestion(correct, q, skipped){
+  state.answered = true;
+  const fb = document.getElementById("feedback");
+  document.getElementById("checkBtn").disabled = true;
+  document.getElementById("skipBtn").style.display = "none";
+  // Hard-lock all interaction with this question so re-editing inputs/chips
+  // after answering can't re-enable the check button and re-fire this function.
+  stage.style.pointerEvents = "none";
+  stage.querySelectorAll("input").forEach(el=>{ el.disabled = true; el.blur(); });
+  if(skipped){
+    fb.textContent = "Skipped. Moving to the next question.";
+    fb.className = "feedback show incorrect";
+  } else if(correct){
+    state.score++;
+    fb.textContent = "Correct.";
+    fb.className = "feedback show correct";
+  } else {
+    fb.textContent = "Not quite — review this topic before moving on.";
+    fb.className = "feedback show incorrect";
+  }
+  state.results.push({tag:q.tag, correct: !!correct && !skipped});
+  const controls = document.querySelector(".controls");
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "btn-primary";
+  nextBtn.textContent = state.index === questions.length-1 ? "See results" : "Next question";
+  nextBtn.style.marginLeft = "auto";
+  nextBtn.style.pointerEvents = "auto"; // stays clickable even though the stage is locked
+  nextBtn.onclick = ()=>{ state.index++; save(); render(); };
+  controls.appendChild(nextBtn);
+}
+
+/* ---------- Results ---------- */
+function renderResults(){
+  const total = questions.length;
+  const pct = Math.round((state.score/total)*100);
+  const byTag = {};
+  state.results.forEach(r=>{
+    byTag[r.tag] = byTag[r.tag] || {correct:0, total:0};
+    byTag[r.tag].total++;
+    if(r.correct) byTag[r.tag].correct++;
+  });
+  const rows = Object.keys(byTag).map(tag=>{
+    const d = byTag[tag];
+    return `<div class="breakdown-row"><span>${tag}</span><span>${d.correct} / ${d.total}</span></div>`;
+  }).join("");
+  stage.innerHTML = `
+    <div class="card results">
+      <span class="engine-tag">RESULTS</span>
+      <h2>Practice set complete</h2>
+      <div class="score-big">${state.score}/${total}</div>
+      <div class="sub" style="margin-top:0;">${pct}% correct</div>
+      <div class="breakdown">${rows}</div>
+      <div class="controls">
+        <button class="btn-ghost" id="restartBtn">Restart</button>
+      </div>
+    </div>`;
+  document.getElementById("restartBtn").onclick = ()=>{
+    state.index = 0; state.score = 0; state.results = [];
+    save(); render();
+  };
+}
+
+load();
+render();
+})();
+</script>
+</body>
+</html>
