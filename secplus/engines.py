@@ -29,6 +29,8 @@ class SequencingEngine(QWidget):
         super().__init__(parent)
         self.q = q
         self.order = []
+        self.pool_order = list(range(len(q["items"])))
+        random.shuffle(self.pool_order)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -56,10 +58,10 @@ class SequencingEngine(QWidget):
 
     def _build_pool(self):
         self._clear(self.pool_layout)
-        for idx, text in enumerate(self.q["items"]):
+        for idx in self.pool_order:
             if idx in self.order:
                 continue
-            btn = QPushButton(_wrapped(text, 30))
+            btn = QPushButton(_wrapped(self.q["items"][idx], 30))
             btn.setObjectName("seqChip")
             btn.clicked.connect(lambda _=False, idx=idx: self._pick(idx))
             self.pool_layout.addWidget(btn)
@@ -68,20 +70,25 @@ class SequencingEngine(QWidget):
     def _build_slots(self):
         self._clear(self.slots_layout)
         for i in range(len(self.q["items"])):
-            row = QHBoxLayout()
-            num = QLabel(f"{i+1}.")
-            num.setObjectName("seqNum")
-            row.addWidget(num)
-            text = QLabel(self.q["items"][self.order[i]] if i < len(self.order) else "—")
-            text.setWordWrap(True)
-            row.addWidget(text, 1)
-            row_wrap = QFrame()
-            row_wrap.setObjectName("seqSlot")
-            row_wrap.setLayout(row)
-            self.slots_layout.addWidget(row_wrap)
+            if i < len(self.order):
+                btn = QPushButton(f"{i+1}.  {self.q['items'][self.order[i]]}")
+                btn.setObjectName("seqSlot")
+                btn.setToolTip("Click to remove")
+                btn.clicked.connect(lambda _=False, i=i: self._unpick(i))
+            else:
+                btn = QPushButton(f"{i+1}.  —")
+                btn.setObjectName("seqSlot")
+                btn.setEnabled(False)
+            self.slots_layout.addWidget(btn)
 
     def _pick(self, idx):
         self.order.append(idx)
+        self._build_pool()
+        self._build_slots()
+        self.readyChanged.emit(len(self.order) == len(self.q["items"]))
+
+    def _unpick(self, position):
+        self.order.pop(position)
         self._build_pool()
         self._build_slots()
         self.readyChanged.emit(len(self.order) == len(self.q["items"]))

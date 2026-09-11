@@ -282,10 +282,80 @@ class MainWindow(QMainWindow):
             self.render()
 
         restart_btn.clicked.connect(restart)
-        layout.addWidget(restart_btn, alignment=Qt.AlignLeft)
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(restart_btn)
+
+        flagged = [i for i, r in enumerate(self.results) if not r["correct"]]
+        if flagged:
+            review_btn = QPushButton(f"Review flagged questions ({len(flagged)})")
+            review_btn.setObjectName("btnGhost")
+            review_btn.clicked.connect(lambda: self._start_review(flagged))
+            btn_row.addWidget(review_btn)
+        btn_row.addStretch(1)
+        btn_row_wrap = QWidget()
+        btn_row_wrap.setLayout(btn_row)
+        layout.addWidget(btn_row_wrap)
 
         self.stage.addWidget(card)
         self.current_card = card
+
+    def _start_review(self, flagged):
+        self.review_flagged = flagged
+        self.review_pos = 0
+        self.render_review()
+
+    def render_review(self):
+        self.clear_stage()
+        qi = self.review_flagged[self.review_pos]
+        q = QUESTIONS[qi]
+
+        card = QFrame()
+        card.setObjectName("card")
+        layout = QVBoxLayout(card)
+
+        tag = QLabel(f"REVIEWING {self.review_pos + 1} OF {len(self.review_flagged)} — Q{qi + 1}: {q['tag']}")
+        tag.setObjectName("engineTag")
+        layout.addWidget(tag, alignment=Qt.AlignLeft)
+
+        prompt = QLabel(q["prompt"])
+        prompt.setObjectName("prompt")
+        prompt.setWordWrap(True)
+        layout.addWidget(prompt)
+
+        feedback = QLabel("Not answered correctly — revisit this topic before your next attempt.")
+        feedback.setObjectName("feedbackIncorrect")
+        feedback.setWordWrap(True)
+        layout.addWidget(feedback)
+
+        nav_row = QHBoxLayout()
+        prev_btn = QPushButton("← Previous flagged")
+        prev_btn.setObjectName("btnGhost")
+        prev_btn.setEnabled(self.review_pos > 0)
+        prev_btn.clicked.connect(self._review_prev)
+        nav_row.addWidget(prev_btn)
+        nav_row.addStretch(1)
+        back_btn = QPushButton("Back to results")
+        back_btn.setObjectName("btnGhost")
+        back_btn.clicked.connect(self.render_results)
+        nav_row.addWidget(back_btn)
+        next_btn = QPushButton("Next flagged →")
+        next_btn.setObjectName("btnPrimary")
+        next_btn.setEnabled(self.review_pos < len(self.review_flagged) - 1)
+        next_btn.clicked.connect(self._review_next)
+        nav_row.addWidget(next_btn)
+        layout.addLayout(nav_row)
+
+        self.stage.addWidget(card)
+        self.current_card = card
+
+    def _review_prev(self):
+        self.review_pos -= 1
+        self.render_review()
+
+    def _review_next(self):
+        self.review_pos += 1
+        self.render_review()
 
 
 def main():

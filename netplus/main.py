@@ -283,13 +283,96 @@ class MainWindow(QMainWindow):
         msg_label.setWordWrap(True)
         layout.addWidget(msg_label)
 
+        btn_row = QHBoxLayout()
         again_btn = QPushButton("Run it again")
         again_btn.setObjectName("nextBtn")
         again_btn.clicked.connect(self._reset)
-        layout.addWidget(again_btn, alignment=Qt.AlignLeft)
+        btn_row.addWidget(again_btn)
+
+        flagged = [i for i, r in enumerate(self.results) if r is False]
+        if flagged:
+            review_btn = QPushButton(f"Review flagged questions ({len(flagged)})")
+            review_btn.setObjectName("resetBtn")
+            review_btn.clicked.connect(lambda: self._start_review(flagged))
+            btn_row.addWidget(review_btn)
+        btn_row.addStretch(1)
+        btn_row_wrap = QWidget()
+        btn_row_wrap.setLayout(btn_row)
+        layout.addWidget(btn_row_wrap)
 
         self.stage_layout.addWidget(card)
         self.current_card = card
+
+    def _start_review(self, flagged):
+        self.review_flagged = flagged
+        self.review_pos = 0
+        self.render_review()
+
+    def render_review(self):
+        self._clear(self.stage_layout)
+        qi = self.review_flagged[self.review_pos]
+        q = QUESTIONS[qi]
+
+        card = QFrame()
+        card.setObjectName("card")
+        layout = QVBoxLayout(card)
+
+        eng_label = QLabel(
+            f"Reviewing flagged {self.review_pos + 1} of {len(self.review_flagged)} "
+            f"— Port {qi + 1}: {ENGINE_LABELS[q['engine']]}"
+        )
+        eng_label.setObjectName("engLabel")
+        layout.addWidget(eng_label)
+
+        title = QLabel(q["title"])
+        title.setObjectName("qTitle")
+        title.setWordWrap(True)
+        layout.addWidget(title)
+
+        scenario = QLabel(q["scenario"])
+        scenario.setObjectName("scenario")
+        scenario.setWordWrap(True)
+        layout.addWidget(scenario)
+
+        verdict = QLabel("LINK DOWN — REVIEW")
+        verdict.setObjectName("verdictFail")
+        layout.addWidget(verdict, alignment=Qt.AlignLeft)
+
+        explain = QLabel("Why: " + q["explanation"])
+        explain.setObjectName("explain")
+        explain.setWordWrap(True)
+        layout.addWidget(explain)
+
+        nav_row = QHBoxLayout()
+        prev_btn = QPushButton("← Previous flagged")
+        prev_btn.setObjectName("resetBtn")
+        prev_btn.setEnabled(self.review_pos > 0)
+        prev_btn.clicked.connect(self._review_prev)
+        nav_row.addWidget(prev_btn)
+        nav_row.addStretch(1)
+        back_btn = QPushButton("Back to results")
+        back_btn.setObjectName("resetBtn")
+        back_btn.clicked.connect(self.render)
+        nav_row.addWidget(back_btn)
+        next_btn = QPushButton("Next flagged →")
+        next_btn.setObjectName("nextBtn")
+        next_btn.setEnabled(self.review_pos < len(self.review_flagged) - 1)
+        next_btn.clicked.connect(self._review_next)
+        nav_row.addWidget(next_btn)
+        nav_wrap = QWidget()
+        nav_wrap.setLayout(nav_row)
+        layout.addWidget(nav_wrap)
+
+        self.stage_layout.addWidget(card)
+        self.current_card = card
+
+    def _review_prev(self):
+        self.review_pos -= 1
+        self.render_review()
+
+    def _review_next(self):
+        self.review_pos += 1
+        self.render_review()
 
 
 def main():
