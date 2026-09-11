@@ -99,7 +99,7 @@ QUESTIONS = [
         ),
         "followup_question": "Based on this output, what is most likely wrong with the workstation's network connection?",
         "followup_answer": "no dhcp",
-        "followup_accept_contains": ["apipa", "dhcp", "169.254"],
+        "followup_accept_contains": ["apipa", "dhcp", "169.254", "dora", "lease"],
         "explanation": (
             "169.254.x.x is an APIPA address — Windows assigns this automatically when it can't reach a "
             "DHCP server. The missing Default Gateway confirms it: the workstation never got a real lease, "
